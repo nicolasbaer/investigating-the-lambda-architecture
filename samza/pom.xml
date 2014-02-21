@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>lambda-architecture</artifactId>
+        <groupId>ch.uzh.ddis.thesis</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>samza</artifactId>
+    <name>Apache Samza Integration</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.samza</groupId>
+            <artifactId>samza-api</artifactId>
+            <version>${samza-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.samza</groupId>
+            <artifactId>samza-core_2.8.1</artifactId>
+            <version>${samza-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.samza</groupId>
+            <artifactId>samza-serializers_2.8.1</artifactId>
+            <version>${samza-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.samza</groupId>
+            <artifactId>samza-shell</artifactId>
+            <classifier>dist</classifier>
+            <type>tgz</type>
+            <version>${samza-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.samza</groupId>
+            <artifactId>samza-yarn_2.8.1</artifactId>
+            <version>${samza-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.samza</groupId>
+            <artifactId>samza-kafka_2.8.1</artifactId>
+            <version>${samza-version}</version>
+        </dependency>
+    </dependencies>
+</project>
