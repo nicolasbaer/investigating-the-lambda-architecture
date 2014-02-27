@@ -8,6 +8,8 @@ import kafka.producer.ProducerConfig;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,6 +21,7 @@ import java.util.logging.Logger;
  */
 public final class CSVAdaptor implements Runnable{
     private final static Logger LOGGER = Logger.getLogger(CSVAdaptor.class.getName());
+    private final static int BATCH_SIZE = 200;
 
     private final kafka.javaapi.producer.Producer<String, String> producer;
     private final String topic;
@@ -44,11 +47,20 @@ public final class CSVAdaptor implements Runnable{
 
         try {
             reader = new CSVReader(new FileReader(this.csvFile));
-            String [] line;
+            String[] line;
+            List<KeyedMessage<String, String>> messages = new ArrayList<>();
             while ((line = reader.readNext()) != null) {
                 String json = new Gson().toJson(line);
                 KeyedMessage<String, String> message = new KeyedMessage<>(this.topic, line[0].toString(), json);
-                producer.send(message);
+                messages.add(message);
+
+                if(messages.size() % BATCH_SIZE == 0){
+                    producer.send(messages);
+                    messages.clear();
+                }
+            }
+            if(!messages.isEmpty()){
+                producer.send(messages);
             }
         } catch (IOException ex){
             LOGGER.log(Level.SEVERE, "CSV file not found, stopping producer: %s", this.csvFile.getAbsolutePath());

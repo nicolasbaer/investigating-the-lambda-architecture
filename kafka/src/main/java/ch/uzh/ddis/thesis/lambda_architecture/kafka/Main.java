@@ -27,6 +27,7 @@ public class Main {
             props.put("serializer.class", "kafka.serializer.StringEncoder");
             props.put("key.serializer.class", "kafka.serializer.StringEncoder");
             props.put("zk.connect", "localhost:2181");
+            props.put("producer.type", "sync"); // use sync to not break the order of events
 
             URI uri = Main.class.getClassLoader().getResource("data/debs/first30k.csv").toURI();
             File csv = new File(uri);
