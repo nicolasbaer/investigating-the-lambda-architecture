@@ -8,4 +8,8 @@
         <name>yarn.nodemanager.vmem-pmem-ratio</name>
         <value>10</value>
     </property>
+    <property>
+        <name>yarn.log-aggregation-enable</name>
+        <value>true</value>
+    </property>
 </configuration>

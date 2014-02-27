@@ -45,6 +45,11 @@
             <artifactId>samza-kafka_2.8.1</artifactId>
             <version>${samza-version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka_2.8.1</artifactId>
+            <version>0.8.1</version>
+        </dependency>
     </dependencies>
 
     <build>
