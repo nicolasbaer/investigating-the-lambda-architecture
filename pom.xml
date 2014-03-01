@@ -28,8 +28,10 @@
 
     <properties>
         <!-- versions -->
-        <kafka-version>0.8.0</kafka-version>
+        <kafka-version>0.8.1</kafka-version>
         <samza-version>0.7.0</samza-version>
+        <!-- samza does not seem to be compatible with kafka 0.8.0 -->
+        <samza-kafka-version>0.8.1</samza-kafka-version>
 
         <!-- encoding -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
