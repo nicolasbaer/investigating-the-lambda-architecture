@@ -190,7 +190,7 @@ stop_kafka() {
   fi
 }
 
-stop_yarn() {
+stop_storm() {
   if [ -f $DEPLOY_ROOT_DIR/$SYSTEM/bin/storm ]; then
     cd $DEPLOY_ROOT_DIR/$SYSTEM
     NIMBUS_PID=`cat pids/nimbus.pid`
