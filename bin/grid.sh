@@ -24,6 +24,7 @@ SCRIPT="grid.sh"
 DOWNLOAD_KAFKA=http://mirrors.sonic.net/apache/kafka/0.8.0/kafka_2.8.0-0.8.0.tar.gz
 DOWNLOAD_YARN=http://mirrors.sonic.net/apache/hadoop/common/hadoop-2.2.0/hadoop-2.2.0.tar.gz
 DOWNLOAD_ZOOKEEPER=http://archive.apache.org/dist/zookeeper/zookeeper-3.4.5/zookeeper-3.4.5.tar.gz
+DOWNLOAD_STORM=http://mirror.switch.ch/mirror/apache/dist/incubator/storm/apache-storm-0.9.1-incubating/apache-storm-0.9.1-incubating.tar.gz
 
 bootstrap() {
   echo "Bootstrapping the system..."
@@ -39,6 +40,7 @@ install_all() {
   $DIR/$SCRIPT install zookeeper
   $DIR/$SCRIPT install yarn
   $DIR/$SCRIPT install kafka
+  $DIR/$SCRIPT install storm
 }
 
 install_zookeeper() {
@@ -67,6 +69,11 @@ install_samza() {
   cd ../..
 }
 
+install_storm() {
+  install "apache-storm-0.9.1-incubating"
+  cp $BASE_DIR/conf/storm.yaml $DEPLOY_ROOT_DIR/$SYSTEM/conf/storm.yaml
+}
+
 install() {
   PACKAGE_DIR=$1
   mkdir -p $DEPLOY_DOWNLOAD_DIR
@@ -81,6 +88,7 @@ start_all() {
   $DIR/$SCRIPT start zookeeper
   $DIR/$SCRIPT start yarn
   $DIR/$SCRIPT start kafka
+  $DIR/$SCRIPT start storm
 }
 
 start_zookeeper() {
@@ -120,10 +128,31 @@ start_kafka() {
   fi
 }
 
+start_storm() {
+  if [ -f $DEPLOY_ROOT_DIR/$SYSTEM/bin/storm ]; then
+    cd $DEPLOY_ROOT_DIR/$SYSTEM
+    mkdir -p pids logs
+    nohup bin/storm nimbus > logs/nimbus.log 2>&1 &
+    NIMBUS_PID=$!
+    echo $NIMBUS_PID > pids/nimbus.pid
+    nohup bin/storm supervisor > logs/supervisor.log 2>&1 &
+    SUPERVISOR_PID=$!
+    echo $SUPERVISOR_PID > pids/supervisor.pid
+    nohup bin/storm ui > logs/ui.log 2>&1 &
+    UI_PID=$!
+    echo $UI_PID > pids/ui.pid
+    echo "Storm UI is available on port 8080"
+    cd - > /dev/null
+  else
+    echo 'Storm is not installed. Run: bin/$SCRIPT install storm'
+  fi
+}
+
 stop_all() {
   $DIR/$SCRIPT stop kafka
   $DIR/$SCRIPT stop yarn
   $DIR/$SCRIPT stop zookeeper
+  $DIR/$SCRIPT stop storm
 }
 
 stop_zookeeper() {
@@ -161,6 +190,24 @@ stop_kafka() {
   fi
 }
 
+stop_yarn() {
+  if [ -f $DEPLOY_ROOT_DIR/$SYSTEM/bin/storm ]; then
+    cd $DEPLOY_ROOT_DIR/$SYSTEM
+    NIMBUS_PID=`cat pids/nimbus.pid`
+    SUPERVISOR_PID=`cat pids/supervisor.pid`
+    UI_PID=`cat pids/ui.pid`
+    kill $NIMBUS_PID
+    kill $SUPERVISOR_PID
+    kill $UI_PID
+    rm -rf pids/nimbus.pid
+    rm -rf pids/supervisor.pid
+    rm -rf pids/ui.pid
+    cd - > /dev/null
+  else
+    echo 'Storm is not installed. Run: bin/$SCRIPT install storm'
+  fi
+}
+
 # Check arguments
 if [ "$COMMAND" == "bootstrap" ] && test -z "$SYSTEM"; then
   bootstrap
@@ -172,9 +219,9 @@ elif (test -z "$COMMAND" && test -z "$SYSTEM") \
   echo
   echo "  $ grid.sh"
   echo "  $ grid.sh bootstrap"
-  echo "  $ grid.sh install [yarn|kafka|zookeeper|all]"
-  echo "  $ grid.sh start [yarn|kafka|zookeeper|all]"
-  echo "  $ grid.sh stop [yarn|kafka|zookeeper|all]"
+  echo "  $ grid.sh install [yarn|kafka|zookeeper|storm|all]"
+  echo "  $ grid.sh start [yarn|kafka|zookeeper|storm|all]"
+  echo "  $ grid.sh stop [yarn|kafka|zookeeper|storm|all]"
   echo
   exit 1
 else
