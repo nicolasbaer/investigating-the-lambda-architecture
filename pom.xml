@@ -25,6 +25,7 @@
         <module>kafka</module>
         <module>samza</module>
         <module>storm</module>
+        <module>utils</module>
     </modules>
 
     <properties>
@@ -77,6 +78,11 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
+            <version>2.0-rc1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-flume-ng</artifactId>
             <version>2.0-rc1</version>
         </dependency>
 

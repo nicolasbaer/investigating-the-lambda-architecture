@@ -4,6 +4,8 @@ import au.com.bytecode.opencsv.CSVReader;
 import com.google.gson.Gson;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.FileReader;
@@ -11,8 +13,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Simple Producer example that reads data from a CSV file.
@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public final class CSVAdaptor implements Runnable{
-    private final static Logger LOGGER = Logger.getLogger(CSVAdaptor.class.getName());
+    private static final Logger logger = LogManager.getLogger(CSVAdaptor.class.getName());
     private final static int BATCH_SIZE = 200;
 
     private final kafka.javaapi.producer.Producer<String, String> producer;
@@ -62,8 +62,8 @@ public final class CSVAdaptor implements Runnable{
             if(!messages.isEmpty()){
                 producer.send(messages);
             }
-        } catch (IOException ex){
-            LOGGER.log(Level.SEVERE, "CSV file not found, stopping producer: %s", this.csvFile.getAbsolutePath());
+        } catch (IOException ex) {
+            logger.error("CSV file not found, stopping producer: {}", this.csvFile.getAbsolutePath());
             return;
         }
         finally {
@@ -71,7 +71,7 @@ public final class CSVAdaptor implements Runnable{
                 try {
                     reader.close();
                 } catch (IOException ex){
-                    LOGGER.log(Level.INFO, "could not close file properly: %s", this.csvFile.getAbsolutePath());
+                    logger.error("could not close file properly: {}", this.csvFile.getAbsolutePath());
                 }
             }
         }

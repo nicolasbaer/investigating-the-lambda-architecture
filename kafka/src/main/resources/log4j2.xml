@@ -2,6 +2,9 @@
     <Appenders>
 
         <Console name="console" target="SYSTEM_OUT" ignoreExceptions="true">
+            <filters>
+                <MarkerFilter marker="PERFORMANCE" onMatch="DENY" onMismatch="ACCEPT"/>
+            </filters>
             <PatternLayout pattern="%highlight{%d{ABSOLUTE} %c{3} %-5level: %msg%n%throwable}"/>
         </Console>
 
@@ -14,22 +17,25 @@
             </PatternLayout>
         </File>
 
+        <Flume name="performance-flume" compress="false">
+            <filters>
+                <MarkerFilter marker="PERFORMANCE" onMatch="ACCEPT" onMismatch="DENY"/>
+            </filters>
+            <Agent host="127.0.0.1" port="4141"/>
+            <layout name="CustomJSONLayout" />
+        </Flume>
+
         <Async name="performance-file-async">
             <AppenderRef ref="performance-file"/>
+        </Async>
+        <Async name="performance-flume-async">
+            <AppenderRef ref="performance-flume"/>
         </Async>
     </Appenders>
 
     <Loggers>
-        <!-- performance logs -->
         <Logger name="ch.uzh.ddis.thesis.lambda_architecture" level="INFO" additivity="false">
-            <AppenderRef ref="performance-file-async"/>
-        </Logger>
-
-        <!-- console logger for own code -->
-        <Logger name="ch.uzh.ddis.thesis" level="INFO" additivity="false">
-            <filters>
-                <MarkerFilter marker="PERFORMANCE" onMatch="DENY" onMismatch="ACCEPT"/>
-            </filters>
+            <AppenderRef ref="performance-flume-async"/>
             <AppenderRef ref="console"/>
         </Logger>
 
