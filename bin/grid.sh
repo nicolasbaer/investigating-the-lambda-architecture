@@ -25,6 +25,10 @@ DOWNLOAD_KAFKA=http://mirrors.sonic.net/apache/kafka/0.8.0/kafka_2.8.0-0.8.0.tar
 DOWNLOAD_YARN=http://mirrors.sonic.net/apache/hadoop/common/hadoop-2.2.0/hadoop-2.2.0.tar.gz
 DOWNLOAD_ZOOKEEPER=http://archive.apache.org/dist/zookeeper/zookeeper-3.4.5/zookeeper-3.4.5.tar.gz
 DOWNLOAD_STORM=http://mirror.switch.ch/mirror/apache/dist/incubator/storm/apache-storm-0.9.1-incubating/apache-storm-0.9.1-incubating.tar.gz
+DOWNLOAD_FLUME=http://mirror.switch.ch/mirror/apache/dist/flume/1.4.0/apache-flume-1.4.0-bin.tar.gz
+DOWNLOAD_ELASTICSEARCH=https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.0.1.tar.gz
+DOWNLOAD_KIBANA=https://download.elasticsearch.org/kibana/kibana/kibana-3.0.0milestone5.tar.gz
+DOWNLOAD_JETTY=http://eclipse.mirror.kangaroot.net/jetty/stable-9/dist/jetty-distribution-9.1.3.v20140225.tar.gz
 
 bootstrap() {
   echo "Bootstrapping the system..."
@@ -41,6 +45,7 @@ install_all() {
   $DIR/$SCRIPT install yarn
   $DIR/$SCRIPT install kafka
   $DIR/$SCRIPT install storm
+  $DIR/$SCRIPT install logging
 }
 
 install_zookeeper() {
@@ -74,8 +79,31 @@ install_storm() {
   cp $BASE_DIR/conf/storm.yaml $DEPLOY_ROOT_DIR/$SYSTEM/conf/storm.yaml
 }
 
+install_logging(){
+    install "apache-flume-1.4.0-bin" "flume"
+    cp $BASE_DIR/conf/flume.conf $DEPLOY_ROOT_DIR/flume/conf/example.conf
+
+    install "elasticsearch-1.0.1" "elasticsearch"
+    cp $BASE_DIR/conf/elasticsearch.yml $DEPLOY_ROOT_DIR/elasticsearch/config/elasticsearch.yml
+
+    cp $DEPLOY_ROOT_DIR/elasticsearch/lib/elasticsearch-* $DEPLOY_ROOT_DIR/flume/lib/
+    rm $DEPLOY_ROOT_DIR/flume/lib/lucene-core-*
+    cp $DEPLOY_ROOT_DIRelasticsearch/lib/lucene-core-* $DEPLOY_ROOT_DIR/flume/lib/
+    cp $BASE_DIR/lib/flume-ng-elasticsearch-serializer-num-1.0-SNAPSHOT-jar-with-dependencies.jar $DEPLOY_ROOT_DIR/flume/lib
+
+
+    install "jetty-distribution-9.1.3.v20140225" "jetty"
+    install "kibana-3.0.0milestone5" "kibana"
+    mv $DEPLOY_ROOT_DIR/kibana $DEPLOY_ROOT_DIR/jetty/webapps/
+    mv $BASE_DIR/conf/kibana.js $DEPLOY_ROOT_DIR/jetty/webapps/kibana/config.js
+}
+
 install() {
   PACKAGE_DIR=$1
+  if [ "$2" != "" ]; then
+    SYSTEM=$2
+  fi
+
   mkdir -p $DEPLOY_DOWNLOAD_DIR
   rm -rf $DEPLOY_ROOT_DIR/$SYSTEM
   DOWNLOAD_COMMAND="curl \$DOWNLOAD_""`echo $SYSTEM|tr '[a-z]' '[A-Z]'`"
@@ -89,6 +117,7 @@ start_all() {
   $DIR/$SCRIPT start yarn
   $DIR/$SCRIPT start kafka
   $DIR/$SCRIPT start storm
+  $DIR/$SCRIPT start logging
 }
 
 start_zookeeper() {
@@ -148,11 +177,51 @@ start_storm() {
   fi
 }
 
+start_logging() {
+  if [ -f $DEPLOY_ROOT_DIR/elasticsearch/bin/elasticsearch ]; then
+    cd $DEPLOY_ROOT_DIR/elasticsearch
+    mkdir -p pids logs
+    nohup bin/elasticsearch > logs/elasticsearch.log 2>&1 &
+    ELASTICSEARCH_PID=$!
+    echo $ELASTICSEARCH_PID > pids/elasticsearch.pid
+    cd - > /dev/null
+  else
+    echo 'Elasticsearch is not installed. Run: bin/$SCRIPT install elasticsearch'
+  fi
+
+  if [ -f $DEPLOY_ROOT_DIR/flume/bin/flume-ng ]; then
+    cd $DEPLOY_ROOT_DIR/flume
+    mkdir -p pids logs
+    nohup bin/flume-ng agent --conf conf --conf-file conf/example.conf --name a1 -Dflume.root.logger=INFO,console > logs/flume.log 2>&1 &
+    FLUME_PID=$!
+    echo $FLUME_PID > pids/flume.pid
+    cd - > /dev/null
+  else
+    echo 'Flume is not installed. Run: bin/$SCRIPT install flume'
+  fi
+
+  if [ -f $DEPLOY_ROOT_DIR/jetty/start.jar ]; then
+    cd $DEPLOY_ROOT_DIR/jetty
+    mkdir -p pids logs
+    nohup java -jar start.jar jetty.port=8081 > logs/jetty.log 2>&1 &
+    JETTY_PID=$!
+    echo $JETTY_PID > pids/jetty.pid
+    echo "Kibana is now available on http://localhost:8081/kibana"
+    cd - > /dev/null
+  else
+    echo 'Jetty is not installed. Run: bin/$SCRIPT install jetty'
+  fi
+
+
+
+}
+
 stop_all() {
   $DIR/$SCRIPT stop kafka
   $DIR/$SCRIPT stop yarn
   $DIR/$SCRIPT stop zookeeper
   $DIR/$SCRIPT stop storm
+  $DIR/$SCRIPT stop logging
 }
 
 stop_zookeeper() {
@@ -208,6 +277,20 @@ stop_storm() {
   fi
 }
 
+stop_logging(){
+    cd $DEPLOY_ROOT_DIR
+    ELASTICSEARCH_PID=`cat elasticsearch/pids/elasticsearch.pid`
+    FLUME_PID=`cat flume/pids/flume.pid`
+    JETTY_PID=`cat jetty/pids/jetty.pid`
+    kill $ELASTICSEARCH_PID
+    kill $FLUME_PID
+    kill $JETTY_PID
+    rm -rf elasticsearch/pids/elasticsearch.pid
+    rm -rf flume/pids/flume.pid
+    rm -rf jetty/pids/jetty.pid
+    cd - > /dev/null
+}
+
 # Check arguments
 if [ "$COMMAND" == "bootstrap" ] && test -z "$SYSTEM"; then
   bootstrap
@@ -219,9 +302,9 @@ elif (test -z "$COMMAND" && test -z "$SYSTEM") \
   echo
   echo "  $ grid.sh"
   echo "  $ grid.sh bootstrap"
-  echo "  $ grid.sh install [yarn|kafka|zookeeper|storm|all]"
-  echo "  $ grid.sh start [yarn|kafka|zookeeper|storm|all]"
-  echo "  $ grid.sh stop [yarn|kafka|zookeeper|storm|all]"
+  echo "  $ grid.sh install [yarn|kafka|zookeeper|storm|logging|all]"
+  echo "  $ grid.sh start [yarn|kafka|zookeeper|storm|logging|all]"
+  echo "  $ grid.sh stop [yarn|kafka|zookeeper|storm|logging|all]"
   echo
   exit 1
 else
