@@ -1,5 +1,6 @@
 package ch.uzh.ddis.thesis.lambda_architecture.kafka.producer;
 
+import com.ecyrd.speed4j.StopWatch;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
 import org.apache.logging.log4j.LogManager;
@@ -42,23 +43,23 @@ public final class ProducerPerformanceTest implements Runnable{
     /**
      * Pushes the given string to the kafka queue.
      */
-    private void publishString(){
+    private void publishString() {
+        StopWatch watchCSVWriteline = new StopWatch("kafka_byte_writebatch");
         List<KeyedMessage<String, String>> messages = new ArrayList<>();
-        for (int i = 0; i < ROUNDS; i++){
+        for (int i = 0; i < ROUNDS; i++) {
             KeyedMessage<String, String> message = new KeyedMessage<>(this.topic, "test-partition", this.stringToPublish);
             messages.add(message);
 
-            if(i % (this.batchSize) == 0d){
+            if (i % (this.batchSize) == 0d) {
                 this.producer.send(messages);
                 messages.clear();
+            }
 
-                if(i % 1000 == 0){
-                    final int finalI = i;
-                    logger.info(performance, "\"test\": \"test\"");
-                    //logger.info(performance, new MapMessage(){{ put("test", "test");}});
-                    //logger.info(performance, new JsonMessage("{\"test\":\"test2\"}"));
-                    //logger.info(performance, "batchSize={}, counter={}", this.batchSize, i);
-                }
+            if (i % 1000 == 0 && i != 0) {
+                watchCSVWriteline.stop();
+                final int finalI = i;
+                logger.info(performance, "step={} topic={} batchSize={} duration={}", i, watchCSVWriteline.getTag(), this.batchSize, watchCSVWriteline.getTimeMicros());
+                watchCSVWriteline = new StopWatch("kafka_byte_writebatch");
             }
         }
     }

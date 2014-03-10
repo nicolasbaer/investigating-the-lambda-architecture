@@ -1,12 +1,15 @@
 package ch.uzh.ddis.thesis.lambda_architecture.kafka;
 
-import ch.uzh.ddis.thesis.lambda_architecture.kafka.producer.ProducerPerformanceTest;
+import ch.uzh.ddis.thesis.lambda_architecture.kafka.producer.CSVAdaptorPerformanceTest;
 import com.ecyrd.speed4j.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
+import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public class ProducerPerformance {
+public class ProducerPerformanceCSV {
     private final static Logger logger = LogManager.getLogger();
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
 
@@ -32,21 +35,35 @@ public class ProducerPerformance {
                 batchSize = new Integer(args[0]);
             }
 
-            for (; batchSize <= 700; batchSize++) {
-                StopWatch watchBatchSize = new StopWatch("kafka_byte_batchsize");
+            final URI uri = ProducerPerformanceCSV.class.getClassLoader().getResource("data/debs/first30k.csv").toURI();
+            final File csv = new File(uri);
+            boolean first = true;
+            while(batchSize <= 1000){
+                logger.info("running performance test for batch size {}", batchSize);
+                StopWatch watchBatchSize = new StopWatch("kafka_csv_batchsize_json");
 
                 ExecutorService executor = Executors.newFixedThreadPool(1);
-                Runnable producerThread = new ProducerPerformanceTest("performance-test-string", "1000000000000,1377986401,68.451,0,11,0,0", props, batchSize);
+                Runnable producerThread = new CSVAdaptorPerformanceTest("csv-test", csv, props, batchSize);
                 executor.execute(producerThread);
 
                 executor.shutdown();
                 executor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
 
+                watchBatchSize.stop();
                 logger.info(performance, "topic={} batchSize={} duration={}", watchBatchSize.getTag(), batchSize, watchBatchSize.getTimeMicros());
+
+                if(first){
+                    batchSize += 9;
+                } else{
+                    batchSize += 10;
+                }
+                first = false;
             }
 
+        } catch (URISyntaxException ex){
+            logger.error("could not load csv file! {}", ex.getMessage());
         } catch(InterruptedException ex){
-            logger.error("producer thread crashed unexpectedly: %s", ex.getMessage());
+            logger.error("producer thread crashed unexpectedly: {}", ex.getMessage());
         }
     }
 
