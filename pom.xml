@@ -25,6 +25,7 @@
         <module>kafka</module>
         <module>samza</module>
         <module>storm</module>
+        <module>torque_deploy</module>
     </modules>
 
     <properties>

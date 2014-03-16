@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<configuration>
+    <property>
+        <name>dfs.datanode.data.dir</name>
+        <value>file://$LYARN_DATA</value>
+    </property>
+</configuration>

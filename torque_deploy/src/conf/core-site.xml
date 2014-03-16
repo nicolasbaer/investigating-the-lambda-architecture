@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<configuration>
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://$LYARN_NAMENODE_HOST:8020</value>
+    </property>
+    <property>
+        <name>hadoop.tmp.dir</name>
+        <value>file://$LYARN_TMP</value>
+    </property>
+</configuration>
