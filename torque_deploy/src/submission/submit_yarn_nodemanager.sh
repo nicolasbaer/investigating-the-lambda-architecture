@@ -13,6 +13,8 @@ LYARN_NAMENODE_HOST=$LYARN_NAMENODE_HOST LYARNR_HOST=$LYARNR_HOST source ./yarn_
 
 sleep 120
 
-cp $LYARN_LOGS/* /home/user/baer/lambda/logs/
-mkdir -p /home/user/baer/lambda/logs/conf
-cp $LYARN_HOME/etc/hadoop/* /home/user/baer/lambda/logs/conf/
+mkdir -p /home/user/baer/lambda/logs/$PBS_JOBID/
+
+cp $LYARN_LOGS/* /home/user/baer/lambda/logs/$PBS_JOBID/
+mkdir -p /home/user/baer/lambda/logs/$PBS_JOBID/conf
+cp $LYARN_HOME/etc/hadoop/* /home/user/baer/lambda/logs/$PBS_JOBID/conf/

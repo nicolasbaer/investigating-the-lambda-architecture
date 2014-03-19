@@ -1,18 +1,7 @@
 #!/bin/bash
-
-. ./install.sh "yarn"
-
-
-yarn_config_hdfs=$LAMBDA_APP_HOME/etc/hadoop/hdfs-site.xml
-yarn_config_core=$LAMBDA_APP_HOME/etc/hadoop/core-site.xml
-yarn_config_mapred=$LAMBDA_APP_HOME/etc/hadoop/mapred-site.xml
-
-$yarn_host=$(host $(cat $PBS_NODEFILE) | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
-
-
-cp $lambda_home_conf/hdfs-site.namenode.xml $yarn_config_hdfs
-sed -ie "s,\$data_dir,$LAMBDA_APP_DATA," $zookeeper_config
-
+. ./lambda_home.sh
+. ./java_install.sh
+. ./yarn_install.sh
 
 
 LYARN_DATA_NM=$LYARN_DATA/nm

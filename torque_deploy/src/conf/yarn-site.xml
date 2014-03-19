@@ -4,4 +4,12 @@
         <name>yarn.resourcemanager.hostname</name>
         <value>$LYARNR_HOST</value>
     </property>
+    <property>
+        <name>yarn.nodemanager.localizer.address</name>
+        <value>0.0.0.0:$LYARN_NODEMANAGER_PORT</value>
+    </property>
+    <property>
+        <name>yarn.nodemanager.webapp.address</name>
+        <value>0.0.0.0:$LYARN_NODEMANAGER_WEB_PORT</value>
+    </property>
 </configuration>

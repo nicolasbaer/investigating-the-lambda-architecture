@@ -4,4 +4,16 @@
         <name>dfs.datanode.data.dir</name>
         <value>file://$LYARN_DATA</value>
     </property>
+    <property>
+        <name>dfs.datanode.address</name>
+        <value>0.0.0.0:$LYARN_DNODE_PORT</value>
+    </property>
+    <property>
+        <name>dfs.datanode.ipc.address</name>
+        <value>0.0.0.0:$LYARN_DNODE_IPC_PORT</value>
+    </property>
+    <property>
+        <name>dfs.datanode.http.address</name>
+        <value>0.0.0.0:$LYARN_DNODE_HTTP_PORT</value>
+    </property>
 </configuration>
