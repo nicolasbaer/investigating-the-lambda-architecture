@@ -1,9 +1,13 @@
 #!/bin/bash
 
+# This is the startup script to start the lambda architecture on the IFI Torque cluster (Kraken).
+# The following services are started: zookeeper, yarn (hdfs as well), storm, kafka, logging (flume, elasticsearch, kibana)
+# It's recommended to source this file in order to retrieve the hosts of each service by an environment variable.
+
 ### OPTIONS
-YARN_DATA_NODES=0
-KAFKA_BROKER_NODES=0
-STORM_SUPERVISOR_NODES=0
+YARN_DATA_NODES=5
+KAFKA_BROKER_NODES=5
+STORM_SUPERVISOR_NODES=5
 
 # defines the number of seconds the jobs will run
 SECONDS_SLEEP=180
