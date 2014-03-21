@@ -1,37 +1,55 @@
 #!/bin/bash
 
-. ./yarn_install.sh
+# parameters
+yarn_namenode_host=$1
+yarn_resourcemanager_host=$2
+yarn_datanode_number=$3
+
+# install application and dependencies
+. ./install.sh "jre"
+. ./install.sh "yarn"
 
 
-LYARN_NODEMANAGER_PORT=$((55100 + $LYARN_DATA_NR))
-LYARN_NODEMANAGER_WEB_PORT=$((55500 + $LYARN_DATA_NR))
+# configuration file manipulation
+yarn_config_hdfs=$LAMBDA_APP_HOME/etc/hadoop/hdfs-site.xml
+yarn_config_core=$LAMBDA_APP_HOME/etc/hadoop/core-site.xml
+yarn_config_mapred=$LAMBDA_APP_HOME/etc/hadoop/mapred-site.xml
+yarn_config_yarn=$LAMBDA_APP_HOME/etc/hadoop/yarn-site.xml
 
-LYARN_DNODE_PORT=$((56100 + $LYARN_DATA_NR))
-LYARN_DNODE_IPC_PORT=$((56500 + $LYARN_DATA_NR))
-LYARN_DNODE_HTTP_PORT=$((57100 + $LYARN_DATA_NR))
+nodemanager_port=$((55100 + $yarn_datanode_number))
+nodemanager_web_port=$((55500 + $yarn_datanode_number))
 
-
-
-./replace_var_xml.sh $LAMBDA_CONF/core-site.xml $LYARN_HOME/etc/hadoop/core-site.xml LYARN_NAMENODE_HOST $LYARN_NAMENODE_HOST
-./replace_var_xml_same.sh $LYARN_HOME/etc/hadoop/core-site.xml LYARN_TMP $LYARN_TMP
-
-./replace_var_xml.sh $LAMBDA_CONF/yarn-site.xml $LYARN_HOME/etc/hadoop/yarn-site.xml LYARNR_HOST $LYARNR_HOST
-./replace_var_xml_same.sh $LYARN_HOME/etc/hadoop/yarn-site.xml LYARN_NODEMANAGER_PORT $LYARN_NODEMANAGER_PORT
-./replace_var_xml_same.sh $LYARN_HOME/etc/hadoop/yarn-site.xml LYARN_NODEMANAGER_WEB_PORT $LYARN_NODEMANAGER_WEB_PORT
-
-./replace_var_xml.sh $LAMBDA_CONF/hdfs-site.datanode.xml $LYARN_HOME/etc/hadoop/hdfs-site.xml LYARN_DATA $LYARN_DATA
-./replace_var_xml_same.sh $LYARN_HOME/etc/hadoop/hdfs-site.xml LYARN_DNODE_PORT $LYARN_DNODE_PORT
-./replace_var_xml_same.sh $LYARN_HOME/etc/hadoop/hdfs-site.xml LYARN_DNODE_IPC_PORT $LYARN_DNODE_IPC_PORT
-./replace_var_xml_same.sh $LYARN_HOME/etc/hadoop/hdfs-site.xml LYARN_DNODE_HTTP_PORT $LYARN_DNODE_HTTP_PORT
-
-cp $LAMBDA_CONF/mapred-site.xml $LYARN_HOME/etc/hadoop/mapred-site.xml
+datanode_port=$((56100 + $yarn_datanode_number))
+datanode_ipc_port=$((56500 + $yarn_datanode_number))
+datanode_web_port=$((57100 + $yarn_datanode_number))
 
 
-cd $LYARN_HOME
-JAVA_HOME=$JAVA_HOME nohup bin/hdfs datanode > $LYARN_LOGS/datanode.log 2>&1 &
-DN_PID=$!
-echo $DN_PID > $LYARN_PID/dn.pid
+cp $lambda_home_conf/hdfs-site.datanode.xml $yarn_config_hdfs
+sed -ie "s,\$data_dir,$LAMBDA_APP_DATA," $yarn_config_hdfs
+sed -ie "s,\$datanode_port,$datanode_port," $yarn_config_hdfs
+sed -ie "s,\$datanode_ipc_port,$datanode_ipc_port," $yarn_config_hdfs
+sed -ie "s,\$datanode_web_port,$datanode_web_port," $yarn_config_hdfs
 
-JAVA_HOME=$JAVA_HOME nohup bin/yarn nodemanager > $LYARN_LOGS/nodemanager.log 2>&1 &
-NM_PID=$!
-echo $NM_PID > $LYARN_PID/nm.pid
+
+cp $lambda_home_conf/core-site.xml $yarn_config_core
+sed -ie "s,\$tmp_dir,$LAMBDA_APP_TMP," $yarn_config_core
+sed -ie "s,\$host,$yarn_namenode_host," $yarn_config_core
+
+cp $lambda_home_conf/yarn-site.xml $yarn_config_yarn
+sed -ie "s,\$host,$yarn_resourcemanager_host," $yarn_config_yarn
+sed -ie "s,\$nodemanager_port,$nodemanager_port," $yarn_config_yarn
+sed -ie "s,\$nodemanager_web_port,$nodemanager_web_port," $yarn_config_yarn
+
+cp $lambda_home_conf/mapred-site.xml $yarn_config_mapred
+
+
+# start datanode
+cd $LAMBDA_APP_HOME
+JAVA_HOME=$JAVA_HOME nohup bin/hdfs datanode > $LAMBDA_APP_LOGS/datanode.log 2>&1 &
+pid=$!
+echo $pid > $LAMBDA_APP_PIDS/datanode.pid
+
+# start nodemanager
+JAVA_HOME=$JAVA_HOME nohup bin/yarn nodemanager > $LAMBDA_APP_LOGS/nodemanager.log 2>&1 &
+pid=$!
+echo $pid > $LAMBDA_APP_PIDS/namenode.pid

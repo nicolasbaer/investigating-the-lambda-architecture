@@ -2,19 +2,20 @@
 #PBS -N yarn_data
 #PBS -l nodes=1:ppn=1
 #PBS -j oe
-#PBS -o yarn_data.out
-#PBS -e yarn_data.err
+#PBS -o yarn_data_$LYARN_DATA_NR.out
+#PBS -e yarn_data_$LYARN_DATA_NR.err
 #PBS -m n
 #PBS -V
 
-cd /home/user/baer/lambda/src/execution
+
+cd ~/lambda/execution
 chmod +x ./*.sh
-LYARN_NAMENODE_HOST=$LYARN_NAMENODE_HOST LYARNR_HOST=$LYARNR_HOST source ./yarn_nodemanager.sh
+source ./yarn_nodemanager.sh $LYARN_NAMENODE_HOST $LYARNR_HOST $LYARN_DATA_NR
 
-sleep 120
+sleep $SECONDS_SLEEP
 
-mkdir -p /home/user/baer/lambda/logs/$PBS_JOBID/
+mkdir -p ~/lambda/logs/$PBS_JOBID/
 
-cp $LYARN_LOGS/* /home/user/baer/lambda/logs/$PBS_JOBID/
-mkdir -p /home/user/baer/lambda/logs/$PBS_JOBID/conf
-cp $LYARN_HOME/etc/hadoop/* /home/user/baer/lambda/logs/$PBS_JOBID/conf/
+cp $LAMBDA_APP_LOGS/* ~/lambda/logs/$PBS_JOBID/
+mkdir -p ~/lambda/logs/$PBS_JOBID/conf
+cp $LAMBDA_APP_HOME/etc/hadoop/* ~/lambda/logs/$PBS_JOBID/conf/

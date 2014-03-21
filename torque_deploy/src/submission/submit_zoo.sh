@@ -7,8 +7,8 @@
 #PBS -m n
 #PBS -V
 
-cd /home/user/baer/lambda/src/execution
+cd ~/lambda/execution
 chmod +x ./*.sh
-./zookeeper.sh
+source ./zookeeper.sh
 
-sleep 120
+sleep $SECONDS_SLEEP

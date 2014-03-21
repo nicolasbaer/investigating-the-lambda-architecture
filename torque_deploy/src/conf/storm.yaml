@@ -1,17 +1,15 @@
 storm.zookeeper.servers:
-    - "localhost"
+    - "$zookeeper_host"
 
-nimbus.host: "localhost"
+nimbus.host: "$nimbus_host"
 
 
-storm.local.dir: "/tmp/storm"
+storm.local.dir: "$data_dir"
 
 
 supervisor.slots.ports:
-    - 6700
-    - 6701
-    - 6702
-    - 6703
+    - $port
+
 #
 #
 # ##### These may optionally be filled in:

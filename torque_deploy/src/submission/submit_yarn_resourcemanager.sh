@@ -7,11 +7,13 @@
 #PBS -m n
 #PBS -V
 
-cd /home/user/baer/lambda/src/execution
+
+
+cd ~/lambda/execution
 chmod +x ./*.sh
-LYARN_NAMENODE_HOST=$LYARN_NAMENODE_HOST source ./yarn_resourcemanager.sh
+source ./yarn_resourcemanager.sh $LYARN_NAMENODE_HOST
 
-sleep 120
+sleep $SECONDS_SLEEP
 
-cp $LYARN_HOME/etc/hadoop/core-site.xml /home/user/baer/lambda/logs/
-cp $LYARN_LOGS/rm.log /home/user/baer/lambda/logs/
+cp $LAMBDA_APP_HOME/etc/hadoop/core-site.xml ~/lambda/logs/
+cp $LAMBDA_APP_HOME/resourcemanager.log ~/lambda/logs/

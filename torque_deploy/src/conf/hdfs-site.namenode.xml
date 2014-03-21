@@ -2,6 +2,6 @@
 <configuration>
     <property>
         <name>dfs.namenode.name.dir</name>
-        <value>file://$LYARN_DATA_NM</value>
+        <value>file://$data_dir</value>
     </property>
 </configuration>

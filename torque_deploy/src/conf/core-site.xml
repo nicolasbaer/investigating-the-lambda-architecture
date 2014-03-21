@@ -2,10 +2,10 @@
 <configuration>
     <property>
         <name>fs.defaultFS</name>
-        <value>hdfs://$LYARN_NAMENODE_HOST:8020</value>
+        <value>hdfs://$host:8020</value>
     </property>
     <property>
         <name>hadoop.tmp.dir</name>
-        <value>file://$LYARN_TMP</value>
+        <value>file://$tmp_dir</value>
     </property>
 </configuration>

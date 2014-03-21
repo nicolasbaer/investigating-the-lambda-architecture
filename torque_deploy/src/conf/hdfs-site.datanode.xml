@@ -2,18 +2,18 @@
 <configuration>
     <property>
         <name>dfs.datanode.data.dir</name>
-        <value>file://$LYARN_DATA</value>
+        <value>file://$data_dir</value>
     </property>
     <property>
         <name>dfs.datanode.address</name>
-        <value>0.0.0.0:$LYARN_DNODE_PORT</value>
+        <value>0.0.0.0:$datanode_port</value>
     </property>
     <property>
         <name>dfs.datanode.ipc.address</name>
-        <value>0.0.0.0:$LYARN_DNODE_IPC_PORT</value>
+        <value>0.0.0.0:$datanode_ipc_port</value>
     </property>
     <property>
         <name>dfs.datanode.http.address</name>
-        <value>0.0.0.0:$LYARN_DNODE_HTTP_PORT</value>
+        <value>0.0.0.0:$datanode_web_port</value>
     </property>
 </configuration>

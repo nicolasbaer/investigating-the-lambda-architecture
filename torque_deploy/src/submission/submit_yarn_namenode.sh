@@ -7,10 +7,10 @@
 #PBS -m n
 #PBS -V
 
-cd /home/user/baer/lambda/src/execution
+cd ~/lambda/execution
 chmod +x ./*.sh
-. ./yarn_namenode.sh
+source ./yarn_namenode.sh
 
-sleep 120
+sleep $SECONDS_SLEEP
 
-cp $LYARN_LOGS/namenode.log /home/user/baer/lambda/logs/
+cp $LAMBDA_APP_LOGS/namenode.log ~/lambda/logs/

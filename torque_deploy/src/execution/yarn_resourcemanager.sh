@@ -1,12 +1,25 @@
 #!/bin/bash
 
-. ./yarn_install.sh
+# parameters
+yarn_nodename_host=$1
 
-./replace_var_xml.sh $LAMBDA_CONF/core-site.xml $LYARN_HOME/etc/hadoop/core-site.xml LYARN_NAMENODE_HOST $LYARN_NAMENODE_HOST
-./replace_var_xml_same.sh $LYARN_HOME/etc/hadoop/core-site.xml LYARN_TMP $LYARN_TMP
-cp $LAMBDA_CONF/mapred-site.xml $LYARN_HOME/etc/hadoop/mapred-site.xml
+# install application and dependencies
+. ./install.sh "jre"
+. ./install.sh "yarn"
 
-cd $LYARN_HOME
-JAVA_HOME=$JAVA_HOME nohup bin/yarn resourcemanager > $LYARN_LOGS/rm.log 2>&1 &
-RM_PID=$!
-echo $RM_PID > $LYARN_PID/rm.pid
+# configuration file manipulation
+yarn_config_core=$LAMBDA_APP_HOME/etc/hadoop/core-site.xml
+yarn_config_mapred=$LAMBDA_APP_HOME/etc/hadoop/mapred-site.xml
+
+cp $lambda_home_conf/core-site.xml $yarn_config_core
+sed -ie "s,\$tmp_dir,$LAMBDA_APP_TMP," $yarn_config_core
+sed -ie "s,\$host,$yarn_nodename_host," $yarn_config_core
+
+cp $lambda_home_conf/mapred-site.xml $yarn_config_mapred
+
+
+# start resource manager service
+cd $LAMBDA_APP_HOME
+JAVA_HOME=$JAVA_HOME nohup bin/yarn resourcemanager > $LAMBDA_APP_LOGS/resource_manager.log 2>&1 &
+pid=$!
+echo $pid > $LAMBDA_APP_PIDS/resource_manager.pid
