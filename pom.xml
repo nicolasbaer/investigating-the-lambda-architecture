@@ -26,6 +26,7 @@
         <module>samza</module>
         <module>storm</module>
         <module>torque_deploy</module>
+        <module>spark</module>
     </modules>
 
     <properties>
@@ -35,12 +36,20 @@
         <samza-version>0.7.0</samza-version>
         <storm-version>0.9.1-incubating</storm-version>
         <curator-version>2.4.0</curator-version>
+        <spark-version>0.9.0-incubating</spark-version>
+
+
+        <!-- lang -->
+        <scala-version>2.10.4</scala-version>
+        <scala.binary.version>2.10</scala.binary.version>
 
         <!-- utils -->
         <log4j-version>2.0-rc1</log4j-version>
         <junit-version>4.11</junit-version>
         <powermock-version>1.5.4</powermock-version>
         <commons-cli-version>1.2</commons-cli-version>
+        <akka.group>org.spark-project.akka</akka.group>
+        <akka.version>2.2.3-shaded-protobuf</akka.version>
 
         <!-- encoding -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -61,6 +70,14 @@
     </build>
 
     <dependencies>
+        <!-- lang -->
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+            <version>${scala-version}</version>
+        </dependency>
+
+
         <!-- command line parsing -->
         <dependency>
             <groupId>commons-cli</groupId>

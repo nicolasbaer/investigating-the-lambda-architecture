@@ -14,10 +14,12 @@ import java.util.logging.Logger;
  */
 public class DebsReadTask implements StreamTask{
 
-    private final static Logger LOGGER = Logger.getLogger(DebsReadTask.class.getName());
+    private final static Logger logger = Logger.getLogger(DebsReadTask.class.getName());
 
     @Override
     public void process(IncomingMessageEnvelope incomingMessageEnvelope, MessageCollector messageCollector, TaskCoordinator taskCoordinator) throws Exception {
+
+        logger.info("received message:" + incomingMessageEnvelope.getMessage());
 
         // just write the message to another topic at the moment..
         messageCollector.send(new OutgoingMessageEnvelope(new SystemStream("kafka", "debs-out"), incomingMessageEnvelope.getMessage()));
