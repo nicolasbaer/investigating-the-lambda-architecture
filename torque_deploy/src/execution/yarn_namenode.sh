@@ -1,5 +1,7 @@
 #!/bin/bash
 
+yarn_host=$1
+
 # install application and dependencies
 . ./install.sh "jre"
 . ./install.sh "yarn"
@@ -9,8 +11,6 @@
 yarn_config_hdfs=$LAMBDA_APP_HOME/etc/hadoop/hdfs-site.xml
 yarn_config_core=$LAMBDA_APP_HOME/etc/hadoop/core-site.xml
 yarn_config_mapred=$LAMBDA_APP_HOME/etc/hadoop/mapred-site.xml
-
-yarn_host=$(host $(cat $PBS_NODEFILE) | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
 
 
 cp $lambda_home_conf/hdfs-site.namenode.xml $yarn_config_hdfs

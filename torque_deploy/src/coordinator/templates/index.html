@@ -1,0 +1,36 @@
+{% extends "template.html" %}
+{% block content %}
+<h1>Services</h1>
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>Service</th>
+        <th>Host</th>
+        <th>Status</th>
+        <th>Node Num (Torque)</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for service in services %}
+        <tr>
+            <td>{{ service.service }}</td>
+            <td>{{ service.host }}</td>
+            <td>{{ service.status }}</td>
+            <td>{{ service.node_num }}</td>
+            <td>
+                {% if service.status == "running" %}
+                    <a href="/node/{{ service.uuid }}.pause" class="btn btn-danger">Pause</a>
+                {% else %}
+                    <a href="/node/{{ service.uuid }}.running" class="btn btn-info">Start</a>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+
+
+
+{% endblock %}
