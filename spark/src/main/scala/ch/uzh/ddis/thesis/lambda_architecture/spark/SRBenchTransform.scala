@@ -80,7 +80,6 @@ object SRBenchTransform {
     Runtime.getRuntime().exec("echo 3 > /proc/sys/vm/drop_caches");
 
     System.setProperty("spark.local.dir", "/tmp/spark/temp")
-    System.setProperty("spark.executor.memory", "27g")
 
     val sc = new SparkContext("local[8]", "SRBench", System.getenv("SPARK_HOME"), StreamingContext.jarOfClass(this.getClass))
 
