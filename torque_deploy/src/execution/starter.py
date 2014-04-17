@@ -5,7 +5,7 @@
 Usage:
   starter.py qsub <resource_file> <exec_path>
   starter.py configure_node <resource_file> <nodenum> <vnodenum> <node_file> <exec_path>
-  starter.py wait <resource_file> <nodenum> <vnodenum> <node_file> <exec_path>
+  starter.py wait <resource_file> <nodenum> <vnodenum> <node_file> <exec_path> <install_path>
   starter.py -h | --help
 
 Options:
@@ -20,6 +20,7 @@ import os
 import time
 
 from docopt import docopt
+import requests
 import sh
 
 
@@ -67,55 +68,79 @@ def configure_node(resource_file, node_num, v_node_num, node_file, exec_path):
 
     services = res["node"][node_num]
     for name, settings in services.iteritems():
-        if name == "zookeeper":
-            print "starting zookeeper"
-            sh.bash("zookeeper.sh")
-            print "finished starting zookeeper"
+        start_service(name, mapping, path)
 
-        if name == "nimbus":
+
+def start_service(service, mapping, path, sleep=True):
+    if service == "coordinator":
+        print "starting coordinator"
+        sh.bash("coordinator.sh")
+        print "finished starting coordinator"
+
+    if service == "zookeeper":
+        print "starting zookeeper"
+        sh.bash("zookeeper.sh")
+        print "finished starting zookeeper"
+
+    if service == "nimbus":
+        if sleep:
             time.sleep(5)
-            print "starting storm nimbus"
-            sh.bash(os.path.join(path, "storm_nimbus.sh"), mapping["zookeeper"])
-            print "finished starting storm nimbus"
+        print "starting storm nimbus"
+        sh.bash(os.path.join(path, "storm_nimbus.sh"), mapping["zookeeper"])
+        print "finished starting storm nimbus"
 
-        if name == "namenode":
+    if service == "namenode":
+        if sleep:
             time.sleep(5)
-            print "starting yarn namenode"
-            sh.bash(os.path.join(path, "yarn_namenode.sh"), mapping["namenode"])
-            print "finished starting yarn namenode"
+        print "starting yarn namenode"
+        sh.bash(os.path.join(path, "yarn_namenode.sh"), mapping["namenode"])
+        print "finished starting yarn namenode"
 
-        if name == "resourcemanager":
+    if service == "resourcemanager":
+        if sleep:
             time.sleep(5)
-            print "starting yarn resourcemanager"
-            sh.bash(os.path.join(path, "yarn_resourcemanager.sh"), mapping["namenode"])
-            print "finished starting yarn resourcemanager"
+        print "starting yarn resourcemanager"
+        sh.bash(os.path.join(path, "yarn_resourcemanager.sh"), mapping["namenode"])
+        print "finished starting yarn resourcemanager"
 
-        if name == "logging":
-            print "starting logging engine"
-            sh.bash(os.path.join(path, "logging.sh"))
-            print "finished starting logging engine"
+    if service == "logging":
+        print "starting logging engine"
+        sh.bash(os.path.join(path, "logging.sh"))
+        print "finished starting logging engine"
 
-        if name == "kafka":
+    if service == "kafka":
+        if sleep:
             time.sleep(20)
-            print "starting kafka broker"
-            sh.bash(os.path.join(path, "kafka_broker.sh"), mapping["zookeeper"], v_node_num)
-            print "finished starting kafka broker"
+        print "starting kafka broker"
+        sh.bash(os.path.join(path, "kafka_broker.sh"), mapping["zookeeper"], v_node_num)
+        print "finished starting kafka broker"
 
-        if name == "yarn":
+    if service == "yarn":
+        if sleep:
             time.sleep(20)
-            print "starting yarn nodemanager"
-            sh.bash(os.path.join(path, "yarn_nodemanager.sh"), mapping["namenode"], mapping["resourcemanager"],
-                    v_node_num)
-            print "finished starting yarn nodemanager"
+        print "starting yarn nodemanager"
+        sh.bash(os.path.join(path, "yarn_nodemanager.sh"), mapping["namenode"], mapping["resourcemanager"],
+                v_node_num)
+        print "finished starting yarn nodemanager"
 
-        if name == "supervisor":
+    if service == "supervisor":
+        if sleep:
             time.sleep(20)
-            print "starting storm supervisor"
-            sh.bash(os.path.join(path, "storm_supervisor.sh"), mapping["zookeeper"], mapping["nimbus"], v_node_num)
-            print "finished starting storm supervisor"
+        print "starting storm supervisor"
+        sh.bash(os.path.join(path, "storm_supervisor.sh"), mapping["zookeeper"], mapping["nimbus"], v_node_num)
+        print "finished starting storm supervisor"
+
+def kill_service(service, install_root):
+    pidfile = os.path.join(install_root, service, "pids", "pidfile")
+    with open(pidfile) as f:
+        pids = f.read().splitlines()
+        for pid in pids:
+            sh.kill('-9', pid)
+
+    os.remove(pidfile)
 
 
-def wait(resource_file, node_num, v_node_num, node_file, exec_path):
+def wait(resource_file, node_num, v_node_num, node_file, exec_path, install_path):
     """
 
     :param resource_file:
@@ -124,7 +149,51 @@ def wait(resource_file, node_num, v_node_num, node_file, exec_path):
     :param node_file:
     :return:
     """
-    time.sleep(200)
+    res = _read_resource_file(resource_file)
+    mapping = _read_node_service_mapping(res, node_file)
+    path = os.path.expandvars(os.path.expanduser(exec_path))
+    install_path = os.path.expandvars(os.path.expanduser(install_path))
+
+    coordinator_url = "http://%s.ifi.uzh.ch:5000" % mapping['coordinator']
+
+    # register services for current node
+    services = res["node"][node_num]
+    counter = 0
+    ids = dict()
+    status = dict()
+    for service in services.iterkeys():
+        service_id = "%s%s" % (node_num, counter)
+        ids[service] = service_id
+        status[service] = "running"
+        counter += 1
+
+        url = "%s/register/%s.%s.%s.%s" % (coordinator_url, node_num, mapping[service], service, service_id)  # <node_num>.<host>.<service>.<uuid>
+        requests.get(url)
+
+    run = True
+    while run:
+        # check for changes in the service status
+        for service, id in ids.iteritems():
+            url = "%s/status/%s" % (coordinator_url, id)
+            response = requests.get(url)
+            state = response.text
+
+            if service == "coordinator" and state != "running":
+                run = False
+                break
+
+            if state != status[service]:
+                if state == "pause":
+                    # kill the service
+                    kill_service(service, install_path)
+
+                if state == "running":
+                    # start the service
+                    start_service(service, mapping, path, sleep=False)
+
+                status[service] = state
+
+        time.sleep(10)
 
 
 def _read_resource_file(resource_file):
@@ -174,4 +243,4 @@ if __name__ == "__main__":
 
     if arguments['wait']:
         wait(arguments['<resource_file>'], arguments['<nodenum>'], arguments['<vnodenum>'], arguments['<node_file>'],
-             arguments['<exec_path>'])
+             arguments['<exec_path>'], arguments['<install_path>'])

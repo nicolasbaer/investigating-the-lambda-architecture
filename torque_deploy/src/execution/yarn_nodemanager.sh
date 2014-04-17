@@ -47,9 +47,9 @@ cp $lambda_home_conf/mapred-site.xml $yarn_config_mapred
 cd $LAMBDA_APP_HOME
 JAVA_HOME=$JAVA_HOME nohup bin/hdfs datanode > $LAMBDA_APP_LOGS/datanode.log 2>&1 &
 pid=$!
-echo $pid > $LAMBDA_APP_PIDS/datanode.pid
+echo $pid > $LAMBDA_APP_PIDS/pidfile
 
 # start nodemanager
 JAVA_HOME=$JAVA_HOME nohup bin/yarn nodemanager > $LAMBDA_APP_LOGS/nodemanager.log 2>&1 &
 pid=$!
-echo $pid > $LAMBDA_APP_PIDS/namenode.pid
+echo $pid >> $LAMBDA_APP_PIDS/pidfile

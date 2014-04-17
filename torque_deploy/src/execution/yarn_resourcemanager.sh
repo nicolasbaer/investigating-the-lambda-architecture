@@ -22,4 +22,4 @@ cp $lambda_home_conf/mapred-site.xml $yarn_config_mapred
 cd $LAMBDA_APP_HOME
 JAVA_HOME=$JAVA_HOME nohup bin/yarn resourcemanager > $LAMBDA_APP_LOGS/resource_manager.log 2>&1 &
 pid=$!
-echo $pid > $LAMBDA_APP_PIDS/resource_manager.pid
+echo $pid > $LAMBDA_APP_PIDS/pidfile

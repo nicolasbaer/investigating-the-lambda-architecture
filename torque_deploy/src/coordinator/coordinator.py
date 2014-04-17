@@ -49,6 +49,11 @@ def node(uuid, status):
     return redirect(url_for('list_services'))
 
 
+@app.route('/status/<uuid>')
+def status(uuid):
+    s = cache.get("services")
+    services = json.loads(s)
+    return services[uuid]['status']
 
 
 @app.route('/register/<node_num>.<host>.<service>.<uuid>')
@@ -76,4 +81,4 @@ def register(node_num, host, service, uuid):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')

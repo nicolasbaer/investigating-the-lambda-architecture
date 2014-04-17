@@ -18,16 +18,16 @@ sed -ie "s,\$elasticsearch_host,$hostname," $kibana_config
 cd $LAMBDA_APP_HOME/elasticsearch
 JAVA_HOME=$JAVA_HOME nohup bin/elasticsearch > $LAMBDA_APP_LOGS/elasticsearch.log 2>&1 &
 elasticsearch_pid=$!
-echo $elasticsearch_pid > $LAMBDA_APP_PIDS/elasticsearch.pid
+echo $elasticsearch_pid > $LAMBDA_APP_PIDS/pidfile
 
 # start flume
 cd $LAMBDA_APP_HOME/flume
 JAVA_HOME=$JAVA_HOME nohup bin/flume-ng agent --conf conf --conf-file conf/example.conf --name a1 -Dflume.root.logger=INFO,console > $LAMBDA_APP_LOGS/flume.log 2>&1 &
 flume_pid=$!
-echo $flume_pid > $LAMBDA_APP_PIDS/flume.pid
+echo $flume_pid >> $LAMBDA_APP_PIDS/pidfile
 
 # start kibana
 cd $LAMBDA_APP_HOME/jetty
 nohup nohup $JAVA_HOME/bin/java -jar start.jar jetty.port=8081 > $LAMBDA_APP_LOGS/jetty.log 2>&1 &
 jetty_pid=$!
-echo $jetty_pid > $LAMBDA_APP_PIDS/jetty.pid
+echo $jetty_pid >> $LAMBDA_APP_PIDS/pidfile

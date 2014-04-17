@@ -31,4 +31,4 @@ JAVA_HOME=$JAVA_HOME ./bin/hdfs namenode -format lambda_cluster > $LAMBDA_APP_LO
 # start namenode service
 JAVA_HOME=$JAVA_HOME nohup sbin/hadoop-daemon.sh --config $LAMBDA_APP_HOME/etc/hadoop --script hdfs start namenode > $LAMBDA_APP_LOGS/namenode.log 2>&1 &
 NN_PID=$!
-echo $NN_PID > $LAMBDA_APP_PIDS/namenode.pid
+echo $NN_PID > $LAMBDA_APP_PIDS/pidfile
