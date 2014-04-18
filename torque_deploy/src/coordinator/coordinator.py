@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import json
+import sys
 
 from flask import Flask, request, render_template, redirect, url_for
 from werkzeug.contrib.cache import SimpleCache
 
 # application setup
 app = Flask(__name__)
-cache = SimpleCache()
+cache = SimpleCache(default_timeout=sys.maxint)
 
 
 @app.route('/')

@@ -11,6 +11,42 @@
             "zookeeper": {
                 "cpus": 1,
                 "memory": "512"
+            },
+            "nimbus": {
+                "cpus": 1,
+                "memory": "1024"
+            },
+            "namenode": {
+                "cpus": 1,
+                "memory": "1024"
+            },
+            "resourcemanager": {
+                "cpus": 1,
+                "memory": "1024"
+            },
+            "logging": {
+                "cpus": 1,
+                "memory": "1024"
+            }
+        },
+        "1": {
+            "yarn": {
+                "cpus": 1,
+                "memory": "6144"
+            },
+            "kafka": {
+                "cpus": 1,
+                "memory": "6144"
+            }
+        },
+        "2": {
+            "supervisor": {
+                "cpus": 1,
+                "memory": "6144"
+            },
+            "kafka": {
+                "cpus": 1,
+                "memory": "6144"
             }
         }
     }

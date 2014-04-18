@@ -68,10 +68,10 @@ def configure_node(resource_file, node_num, v_node_num, node_file, exec_path):
 
     services = res["node"][node_num]
     for name, settings in services.iteritems():
-        start_service(name, mapping, path)
+        start_service(name, mapping, path, v_node_num)
 
 
-def start_service(service, mapping, path, sleep=True):
+def start_service(service, mapping, path, v_node_num, sleep=True):
     if service == "coordinator":
         print "starting coordinator"
         sh.bash("coordinator.sh")
@@ -189,7 +189,7 @@ def wait(resource_file, node_num, v_node_num, node_file, exec_path, install_path
 
                 if state == "running":
                     # start the service
-                    start_service(service, mapping, path, sleep=False)
+                    start_service(service, mapping, path, v_node_num, sleep=False)
 
                 status[service] = state
 
@@ -242,5 +242,6 @@ if __name__ == "__main__":
                        arguments['<node_file>'], arguments['<exec_path>'])
 
     if arguments['wait']:
+        print "started!"
         wait(arguments['<resource_file>'], arguments['<nodenum>'], arguments['<vnodenum>'], arguments['<node_file>'],
              arguments['<exec_path>'], arguments['<install_path>'])

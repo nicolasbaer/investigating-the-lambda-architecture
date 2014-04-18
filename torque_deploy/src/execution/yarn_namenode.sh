@@ -23,10 +23,9 @@ sed -ie "s,\$host,$yarn_host," $yarn_config_core
 cp $lambda_home_conf/mapred-site.xml $yarn_config_mapred
 
 
-
 # format hdfs filesystem
 cd $LAMBDA_APP_HOME
-JAVA_HOME=$JAVA_HOME ./bin/hdfs namenode -format lambda_cluster > $LAMBDA_APP_LOGS/namenode_format.log
+yes | JAVA_HOME=$JAVA_HOME ./bin/hdfs namenode -format lambda_cluster > $LAMBDA_APP_LOGS/namenode_format.log 2>&1
 
 # start namenode service
 JAVA_HOME=$JAVA_HOME nohup sbin/hadoop-daemon.sh --config $LAMBDA_APP_HOME/etc/hadoop --script hdfs start namenode > $LAMBDA_APP_LOGS/namenode.log 2>&1 &
