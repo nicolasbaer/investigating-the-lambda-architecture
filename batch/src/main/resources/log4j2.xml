@@ -1,0 +1,47 @@
+<Configuration>
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT" ignoreExceptions="true">
+            <filters>
+                <MarkerFilter marker="PERFORMANCE" onMatch="DENY" onMismatch="ACCEPT"/>
+            </filters>
+            <PatternLayout pattern="%highlight{%d{ABSOLUTE} %c{3} %-5level: %msg%n%throwable}"/>
+        </Console>
+
+        <File name="performance-file" fileName="logs/performance.log" append="false">
+            <filters>
+                <MarkerFilter marker="PERFORMANCE" onMatch="ACCEPT" onMismatch="DENY"/>
+            </filters>
+            <PatternLayout>
+                <Pattern>%d{UNIX_MILLIS} %p %c{1.} [%t] %m%n</Pattern>
+            </PatternLayout>
+        </File>
+
+        <Flume name="performance-flume" compress="false">
+            <filters>
+                <MarkerFilter marker="PERFORMANCE" onMatch="ACCEPT" onMismatch="DENY"/>
+            </filters>
+            <Agent host="127.0.0.1" port="4141"/>
+            <PatternLayout pattern="@timestamp=%d{UNIX_MILLIS} class=%c{1} %msg"/>
+        </Flume>
+
+        <Async name="performance-file-async">
+            <AppenderRef ref="performance-file"/>
+        </Async>
+        <Async name="performance-flume-async">
+            <AppenderRef ref="performance-flume"/>
+        </Async>
+    </Appenders>
+
+    <Loggers>
+        <Logger name="ch.uzh.ddis.thesis.lambda_architecture" level="INFO" additivity="false">
+            <AppenderRef ref="performance-flume-async"/>
+            <AppenderRef ref="console"/>
+        </Logger>
+
+        <!-- general console output -->
+        <Root level="WARN">
+            <AppenderRef ref="console"/>
+        </Root>
+    </Loggers>
+
+</Configuration>
