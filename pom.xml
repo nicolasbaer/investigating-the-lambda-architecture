@@ -37,6 +37,7 @@
         <storm-version>0.9.1-incubating</storm-version>
         <curator-version>2.4.0</curator-version>
         <spark-version>0.9.0-incubating</spark-version>
+        <esper-version>5.0.0</esper-version>
 
 
         <!-- lang -->
@@ -107,6 +108,11 @@
             <artifactId>commons-lang</artifactId>
             <version>2.3</version>
         </dependency>
+        <dependency>
+            <groupId>org.javatuples</groupId>
+            <artifactId>javatuples</artifactId>
+            <version>1.2</version>
+        </dependency>
 
 
         <!-- command line parsing -->
@@ -168,5 +174,13 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <repositories>
+        <repository>
+            <id>codehaus</id>
+            <name>codehause</name>
+            <url>http://repository.codehaus.org</url>
+        </repository>
+    </repositories>
 
 </project>

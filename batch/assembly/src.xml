@@ -28,7 +28,9 @@
         <fileSet>
             <useDefaultExcludes/>
             <outputDirectory>config</outputDirectory>
-            <includes>*.properties</includes>
+            <includes>
+                <include>*.properties</include>
+            </includes>
             <directory>${basedir}/src/main/resources/config</directory>
             <filtered>true</filtered>
         </fileSet>
@@ -37,7 +39,9 @@
         <fileSet>
             <useDefaultExcludes/>
             <outputDirectory>lib</outputDirectory>
-            <includes>*.xml</includes>
+            <includes>
+                <include>*.xml</include>
+            </includes>
             <directory>${basedir}/src/main/resources/</directory>
         </fileSet>
     </fileSets>
