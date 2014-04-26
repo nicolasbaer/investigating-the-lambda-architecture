@@ -17,7 +17,7 @@ import java.util.List;
  *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-final class HashKV<K, V> implements KeyValueStore<K,V>{
+public final class HashKV<K, V> implements KeyValueStore<K,V>{
 
     //private final Map<K, V> map = new HashMap<>();
 
@@ -38,6 +38,9 @@ final class HashKV<K, V> implements KeyValueStore<K,V>{
         Mockito.when(metrics.puts()).thenReturn(new Counter("test"));
         Mockito.when(metrics.bytesWritten()).thenReturn(new Counter("test"));
         Mockito.when(metrics.bytesRead()).thenReturn(new Counter("test"));
+        Mockito.when(metrics.ranges()).thenReturn(new Counter("ranges"));
+        Mockito.when(metrics.deletes()).thenReturn(new Counter("deletes"));
+        Mockito.when(metrics.alls()).thenReturn(new Counter("alls"));
         folder.create();
         this.map = new LevelDbKeyValueStore(folder.getRoot(), new Options(), metrics);
     }
@@ -72,7 +75,7 @@ final class HashKV<K, V> implements KeyValueStore<K,V>{
 
     @Override
     public KeyValueIterator<K, V> all() {
-        return null;
+        return new LevelDBIt(map.all());
     }
 
     @Override

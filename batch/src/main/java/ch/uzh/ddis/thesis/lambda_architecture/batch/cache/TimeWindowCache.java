@@ -1,5 +1,9 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.cache;
 
+import ch.uzh.ddis.thesis.lambda_architecture.batch.serde.GenericData;
+import org.apache.samza.storage.kv.Entry;
+
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -22,6 +26,18 @@ public interface TimeWindowCache<E extends Timestamped> {
      *
      * @return list of cached messages within the current window
      */
-    public List<E> retrieve();
+    public Iterator<Entry<String, GenericData>> retrieve();
+
+
+    /**
+     * @return start time of the current window in milliseconds
+     */
+    public long getStartTime();
+
+
+    /**
+     * @return end time of the current window in milliseconds
+     */
+    public long getEndTime();
 
 }

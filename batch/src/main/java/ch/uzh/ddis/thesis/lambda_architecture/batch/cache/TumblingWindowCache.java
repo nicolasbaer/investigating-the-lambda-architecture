@@ -2,10 +2,12 @@ package ch.uzh.ddis.thesis.lambda_architecture.batch.cache;
 
 import ch.uzh.ddis.thesis.lambda_architecture.batch.serde.GenericData;
 import com.google.common.base.Optional;
+import org.apache.samza.storage.kv.Entry;
+import org.apache.samza.storage.kv.KeyValueIterator;
 import org.apache.samza.storage.kv.KeyValueStore;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * Caches a tumbling window using the provided storage.
@@ -13,7 +15,7 @@ import java.util.List;
  *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public class TumblingWindowCache<E extends Timestamped> implements TimeWindowCache<E>{
+public final class TumblingWindowCache<E extends Timestamped> implements TimeWindowCache<E>{
     private final String key = "tumbling-window";
     private final String keyWindowStart = "window-start";
     private final String keyWindowEnd = "window-end";
@@ -32,11 +34,6 @@ public class TumblingWindowCache<E extends Timestamped> implements TimeWindowCac
         this.store = store;
         this.sizeMs = sizeMs;
 
-        Optional<GenericData> possibleList = Optional.fromNullable(store.get(key));
-        if(!possibleList.isPresent()){
-            store.put(key, new GenericData(new LinkedList<E>()));
-        }
-
         Optional<GenericData> possibleWindowStart = Optional.fromNullable(store.get(keyWindowStart));
         if(possibleWindowStart.isPresent()){
             this.currentWindowStart = (long) possibleWindowStart.get().getData();
@@ -50,33 +47,35 @@ public class TumblingWindowCache<E extends Timestamped> implements TimeWindowCac
 
     @Override
     public void cache(E message) {
-        LinkedList<E> list = (LinkedList) store.get(key).getData();
-
         if(currentWindowStart == 0){
             this.resetWindow(message.getTimestamp());
-            list.addLast(message);
-            store.put(key, new GenericData(list));
+            this.putMessage(message);
 
             return;
         }
 
         if (message.getTimestamp() > currentWindowEnd) {
-            list.clear();
             resetWindow(message.getTimestamp());
-            list.addLast(message);
+            this.putMessage(message);
         } else{
-            list.add(message);
+            this.putMessage(message);
         }
-
-        store.put(key, new GenericData(list));
     }
 
     @Override
-    public List<E> retrieve() {
-        return (LinkedList) store.get(key).getData();
+    public Iterator<Entry<String, GenericData>> retrieve() {
+        String windowStartIndex = this.getKeyZeroPrefixed(currentWindowStart);
+        return this.store.range(windowStartIndex, String.valueOf(currentWindowEnd));
     }
 
     private void resetWindow(long start){
+        String windowStartIndex = this.getKeyZeroPrefixed(this.currentWindowStart);
+        KeyValueIterator<String, GenericData> it = this.store.range(windowStartIndex, String.valueOf(currentWindowEnd));
+        while(it.hasNext()){
+            String key = it.next().getKey();
+            this.store.delete(key);
+        }
+
         this.currentWindowStart = start;
         this.currentWindowEnd = start + (sizeMs -1);
 
@@ -84,4 +83,52 @@ public class TumblingWindowCache<E extends Timestamped> implements TimeWindowCac
         this.store.put(keyWindowEnd, new GenericData(currentWindowEnd));
     }
 
+
+    /**
+     * Since we store the key as string to optimize time for range queries,
+     * we have to store the strings, so that a range query returns the right values with
+     * respect to the limitation of leveldb to use lexicographical ordering.
+     *
+     * @param message message to store
+     */
+    private void putMessage(final E message){
+        // the key has to be prefixed with zeros in order to query it lexicographically
+        String key = this.getKeyZeroPrefixed(message.getTimestamp());
+
+        Optional<GenericData> optionalEntry = Optional.fromNullable(this.store.get(key));
+        if(optionalEntry.isPresent()){
+            ArrayList<E> messages = (ArrayList<E>) optionalEntry.get().getData();
+            messages.add(message);
+            // it's safe to assume the list is serializable, since we use an array list
+            store.put(key, new GenericData<ArrayList>(messages));
+        } else{
+            ArrayList<E> messages = new ArrayList<E>();
+            messages.add(message);
+            this.store.put(key, new GenericData<ArrayList>(messages));
+        }
+    }
+
+    private String getKeyZeroPrefixed(long value){
+        String key;
+        int length = String.valueOf(this.currentWindowEnd).length();
+        if(length > String.valueOf(this.currentWindowStart).length()){
+            StringBuilder stringBuilder = new StringBuilder();
+            String format = stringBuilder.append("%0").append(length).append("d").toString();
+            key = String.format(format, value);
+        } else{
+            key = String.valueOf(value);
+        }
+
+        return key;
+    }
+
+    @Override
+    public long getStartTime() {
+        return this.currentWindowStart;
+    }
+
+    @Override
+    public long getEndTime() {
+        return this.currentWindowEnd;
+    }
 }
