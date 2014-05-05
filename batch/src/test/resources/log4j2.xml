@@ -1,0 +1,22 @@
+<Configuration>
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT" ignoreExceptions="true">
+            <filters>
+                <MarkerFilter marker="PERFORMANCE" onMatch="DENY" onMismatch="ACCEPT"/>
+            </filters>
+            <PatternLayout pattern="%highlight{%d{ABSOLUTE} %c{3} %-5level: %msg%n%throwable}"/>
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <Logger name="ch.uzh.ddis.thesis.lambda_architecture" level="INFO" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+
+        <!-- general console output -->
+        <Root level="WARN">
+            <AppenderRef ref="console"/>
+        </Root>
+    </Loggers>
+
+</Configuration>

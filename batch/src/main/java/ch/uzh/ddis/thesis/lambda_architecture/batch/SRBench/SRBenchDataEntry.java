@@ -22,7 +22,7 @@ public class SRBenchDataEntry implements Timestamped, Identifiable<String>{
     public SRBenchDataEntry(String csvEntry){
         String[] line = csvEntry.split(",");
 
-        this.timestamp = new Long(line[0]);
+        this.timestamp = Long.valueOf(line[0]) * 1000;
         this.station = line[1];
         this.measurement = line[2];
         this.value = line[3];
@@ -65,6 +65,10 @@ public class SRBenchDataEntry implements Timestamped, Identifiable<String>{
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    public double getDoubleValue(){
+        return Double.valueOf(this.value);
     }
 
     public String getUnit() {
