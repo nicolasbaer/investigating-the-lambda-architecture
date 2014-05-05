@@ -1,25 +1,17 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.SRBench.task;
 
 import ch.uzh.ddis.thesis.lambda_architecture.batch.EsperUpdateListener;
-import ch.uzh.ddis.thesis.lambda_architecture.batch.RecoverableSamzaTask;
 import ch.uzh.ddis.thesis.lambda_architecture.batch.SRBench.SRBenchDataEntry;
-import ch.uzh.ddis.thesis.lambda_architecture.batch.cache.TimeWindowCache;
-import ch.uzh.ddis.thesis.lambda_architecture.batch.cache.TumblingWindowCache;
-import ch.uzh.ddis.thesis.lambda_architecture.batch.serde.GenericData;
+import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.TimeWindow;
+import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.TumblingWindow;
 import com.espertech.esper.client.*;
 import com.espertech.esper.client.time.CurrentTimeEvent;
 import org.apache.samza.config.Config;
-import org.apache.samza.storage.kv.Entry;
 import org.apache.samza.system.IncomingMessageEnvelope;
 import org.apache.samza.system.OutgoingMessageEnvelope;
 import org.apache.samza.system.SystemStream;
-import org.apache.samza.task.MessageCollector;
-import org.apache.samza.task.TaskContext;
-import org.apache.samza.task.TaskCoordinator;
+import org.apache.samza.task.*;
 import org.javatuples.Pair;
-
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * Stream Task to answer SRBench Question 1 using esper engine:
@@ -27,71 +19,67 @@ import java.util.List;
  *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public final class SRBenchQ1TaskEsper extends RecoverableSamzaTask {
+public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask {
     private static final String esperEngineName = "srbench-q1";
     private EPRuntime esper;
-    private TimeWindowCache<SRBenchDataEntry> timeWindowCache;
+    private TimeWindow<SRBenchDataEntry> timeWindow;
     private EsperUpdateListener esperUpdateListener;
 
     private final SystemStream resultStream = new SystemStream("kafka", "srbench-q1-results");
 
     @Override
     public void init(Config config, TaskContext taskContext) throws Exception {
-        super.init(config, taskContext);
-        this.timeWindowCache = new TumblingWindowCache<>(super.genericStore, 60l * 60l * 1000l);
+        long windowSize = 60l * 60l * 1000l;
+        this.timeWindow = new TumblingWindow<>(windowSize);
         this.initEsper();
     }
 
     @Override
-    protected void processMessage(IncomingMessageEnvelope incomingMessageEnvelope, MessageCollector messageCollector, TaskCoordinator taskCoordinator, boolean possibleRestore) {
-
+    public void process(IncomingMessageEnvelope incomingMessageEnvelope, MessageCollector messageCollector, TaskCoordinator taskCoordinator) {
         String message = (String) incomingMessageEnvelope.getMessage();
         SRBenchDataEntry entry = new SRBenchDataEntry(message);
 
-        if(possibleRestore){
-            Iterator<Entry<String, GenericData>> it = this.timeWindowCache.retrieve();
-            while(it.hasNext()){
-                List<SRBenchDataEntry> cachedEntries = (List<SRBenchDataEntry>) it.next().getValue().getData();
-                for (SRBenchDataEntry cachedEntry : cachedEntries){
-                    CurrentTimeEvent timeEvent = new CurrentTimeEvent(entry.getTimestamp());
-                    this.esper.sendEvent(timeEvent);
-                    this.esper.sendEvent(entry);
+        if(!this.timeWindow.isInWindow(entry)){
+
+            CurrentTimeEvent timeEvent = new CurrentTimeEvent(entry.getTimestamp());
+            this.esper.sendEvent(timeEvent);
+            this.esper.sendEvent(entry);
+
+            if(this.esperUpdateListener.hasNewData()){
+                Pair<EventBean[], EventBean[]> eventDataTouple = this.esperUpdateListener.getNewData();
+                EventBean[] newEvents = eventDataTouple.getValue0();
+
+                for(int i = 0; i < newEvents.length; i++){
+                    String station = (String) newEvents[i].get("station");
+                    String value = (String) newEvents[i].get("value");
+                    String unit = (String) newEvents[i].get("unit");
+
+                    String result = new StringBuilder()
+                            .append(station)
+                            .append(",")
+                            .append(value)
+                            .append(",")
+                            .append(unit)
+                            .append(",")
+                            .append(this.timeWindow.getWindowStart())
+                            .append(",")
+                            .append(this.timeWindow.getWindowEnd())
+                            .toString();
+
+                    OutgoingMessageEnvelope resultMessage = new OutgoingMessageEnvelope(resultStream, result);
+                    messageCollector.send(resultMessage);
                 }
             }
+
+            taskCoordinator.commit();
+
+        } else{
+            CurrentTimeEvent timeEvent = new CurrentTimeEvent(entry.getTimestamp());
+            this.esper.sendEvent(timeEvent);
+            this.esper.sendEvent(entry);
         }
 
-        CurrentTimeEvent timeEvent = new CurrentTimeEvent(entry.getTimestamp());
-        this.esper.sendEvent(timeEvent);
-        this.esper.sendEvent(entry);
-
-
-        if(this.esperUpdateListener.hasNewData()){
-            Pair<EventBean[], EventBean[]> eventDataTouple = this.esperUpdateListener.getNewData();
-            EventBean[] newEvents = eventDataTouple.getValue0();
-
-            for(int i = 0; i < newEvents.length; i++){
-                String station = (String) newEvents[i].get("station");
-                String value = (String) newEvents[i].get("value");
-                String unit = (String) newEvents[i].get("unit");
-
-                String result = new StringBuilder()
-                        .append(station)
-                        .append(",")
-                        .append(value)
-                        .append(",")
-                        .append(unit)
-                        .append(",")
-                        .append(this.timeWindowCache.getStartTime())
-                        .append(",")
-                        .append(this.timeWindowCache.getEndTime())
-                        .toString();
-
-                OutgoingMessageEnvelope resultMessage = new OutgoingMessageEnvelope(resultStream, result);
-                messageCollector.send(resultMessage);
-            }
-        }
-
-        this.timeWindowCache.cache(entry);
+        this.timeWindow.addEvent(entry);
     }
 
 
@@ -109,7 +97,7 @@ public final class SRBenchQ1TaskEsper extends RecoverableSamzaTask {
         EPAdministrator cepAdm = cep.getEPAdministrator();
         EPStatement cepStatement = cepAdm.createEPL("" +
                 "select " +
-                "   distinct station, value, unit " +
+                "   station, value, unit " +
                 "from " +
                 "   srbench.win:time_batch(1 hour) " +
                 "where " +

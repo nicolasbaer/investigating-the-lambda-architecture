@@ -57,7 +57,7 @@ public class SRBenchQ1TaskEsperTest {
 
             IncomingMessageEnvelope message = new IncomingMessageEnvelope(new SystemStreamPartition("test", "test", new Partition(0)), String.valueOf(i), new String("test"), line);
 
-            task.processMessage(message, collector, coordinator, false);
+            task.process(message, collector, coordinator);
 
             i++;
         }
@@ -66,6 +66,8 @@ public class SRBenchQ1TaskEsperTest {
         for(String result : results){
             System.out.println(result);
         }
+
+        System.out.println(results.size());
 
 
     }

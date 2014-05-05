@@ -19,14 +19,13 @@ import org.javatuples.Pair;
  *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public final class SRBenchQ3TaskEsper implements StreamTask, InitableTask{
-    private static final String esperEngineName = "srbench-q3";
+public final class SRBenchQ4TaskEsper implements StreamTask, InitableTask {
+    private static final String esperEngineName = "srbench-q4";
     private EPRuntime esper;
     private TimeWindow<SRBenchDataEntry> timeWindow;
     private EsperUpdateListener esperUpdateListener;
 
-    private final SystemStream resultStream = new SystemStream("kafka", "srbench-q3-results");
-
+    private final SystemStream resultStream = new SystemStream("kafka", "srbench-q4-results");
 
     @Override
     public void init(Config config, TaskContext taskContext) throws Exception {
@@ -40,7 +39,8 @@ public final class SRBenchQ3TaskEsper implements StreamTask, InitableTask{
         String message = (String) incomingMessageEnvelope.getMessage();
         SRBenchDataEntry entry = new SRBenchDataEntry(message);
 
-        if(this.timeWindow.isInWindow(entry)){
+        if(!this.timeWindow.isInWindow(entry)){
+
             CurrentTimeEvent timeEvent = new CurrentTimeEvent(entry.getTimestamp());
             this.esper.sendEvent(timeEvent);
             this.esper.sendEvent(entry);
@@ -51,12 +51,15 @@ public final class SRBenchQ3TaskEsper implements StreamTask, InitableTask{
 
                 for(int i = 0; i < newEvents.length; i++){
                     String station = (String) newEvents[i].get("station");
-                    String value = String.valueOf(newEvents[i].get("speed"));
+                    String value = (String) newEvents[i].get("value");
+                    String unit = (String) newEvents[i].get("unit");
 
                     String result = new StringBuilder()
                             .append(station)
                             .append(",")
                             .append(value)
+                            .append(",")
+                            .append(unit)
                             .append(",")
                             .append(this.timeWindow.getWindowStart())
                             .append(",")
@@ -67,16 +70,11 @@ public final class SRBenchQ3TaskEsper implements StreamTask, InitableTask{
                     messageCollector.send(resultMessage);
                 }
             }
-
-            taskCoordinator.commit();
-
         } else{
             CurrentTimeEvent timeEvent = new CurrentTimeEvent(entry.getTimestamp());
             this.esper.sendEvent(timeEvent);
             this.esper.sendEvent(entry);
         }
-
-
 
         this.timeWindow.addEvent(entry);
     }
@@ -96,13 +94,13 @@ public final class SRBenchQ3TaskEsper implements StreamTask, InitableTask{
         EPAdministrator cepAdm = cep.getEPAdministrator();
         EPStatement cepStatement = cepAdm.createEPL("" +
                 "select " +
-                "   station, avg(doubleValue) as speed " +
+                "   station, value, unit " +
                 "from " +
                 "   srbench.win:time_batch(1 hour) " +
                 "where " +
-                "   measurement = \"WindSpeed\" " +
-                "group by station " +
-                "having avg(doubleValue) > 74");
+                "   observation = \"RainfallObservation\" " +
+                "output " +
+                "   every 1 hour and when terminated");
 
         this.esperUpdateListener = new EsperUpdateListener();
         cepStatement.addListener(this.esperUpdateListener);
