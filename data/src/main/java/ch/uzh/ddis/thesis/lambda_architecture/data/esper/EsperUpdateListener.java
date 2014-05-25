@@ -1,4 +1,4 @@
-package ch.uzh.ddis.thesis.lambda_architecture.batch;
+package ch.uzh.ddis.thesis.lambda_architecture.data.esper;
 
 import com.espertech.esper.client.EventBean;
 import com.espertech.esper.client.UpdateListener;
@@ -24,9 +24,12 @@ public class EsperUpdateListener implements UpdateListener{
 
     @Override
     public void update(EventBean[] newEvents, EventBean[] oldEvents) {
-        this.newData = true;
-        this.newEventsCache = newEvents;
-        this.oldEventsCache = oldEvents;
+        // Apparently esper also sends an update if no events were matching.
+        if (newEvents != null){
+            this.newData = true;
+            this.newEventsCache = newEvents;
+            this.oldEventsCache = oldEvents;
+        }
     }
 
 

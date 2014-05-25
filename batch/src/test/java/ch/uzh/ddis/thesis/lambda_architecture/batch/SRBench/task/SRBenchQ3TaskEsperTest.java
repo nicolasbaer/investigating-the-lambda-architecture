@@ -1,8 +1,8 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.SRBench.task;
 
 import ch.uzh.ddis.thesis.lambda_architecture.batch.cache.HashKV;
-import ch.uzh.ddis.thesis.lambda_architecture.batch.serde.GenericData;
-import ch.uzh.ddis.thesis.lambda_architecture.batch.serde.GenericSerde;
+import ch.uzh.ddis.thesis.lambda_architecture.data.serde.GenericData;
+import ch.uzh.ddis.thesis.lambda_architecture.data.serde.GenericSerde;
 import org.apache.samza.Partition;
 import org.apache.samza.config.MapConfig;
 import org.apache.samza.metrics.MetricsRegistry;
@@ -57,7 +57,7 @@ public class SRBenchQ3TaskEsperTest {
 
             IncomingMessageEnvelope message = new IncomingMessageEnvelope(new SystemStreamPartition("test", "test", new Partition(0)), String.valueOf(i), new String("test"), line);
 
-            task.processMessage(message, collector, coordinator, false);
+            task.process(message, collector, coordinator);
 
             i++;
         }
@@ -78,6 +78,11 @@ public class SRBenchQ3TaskEsperTest {
 
         @Override
         public void shutdown() {
+            //no-op
+        }
+
+        @Override
+        public void shutdown(ShutdownMethod shutdownMethod) {
             //no-op
         }
     }

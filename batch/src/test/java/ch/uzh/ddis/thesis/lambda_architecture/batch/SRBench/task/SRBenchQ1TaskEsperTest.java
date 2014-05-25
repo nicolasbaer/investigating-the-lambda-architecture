@@ -1,8 +1,8 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.SRBench.task;
 
 import ch.uzh.ddis.thesis.lambda_architecture.batch.cache.HashKV;
-import ch.uzh.ddis.thesis.lambda_architecture.batch.serde.GenericData;
-import ch.uzh.ddis.thesis.lambda_architecture.batch.serde.GenericSerde;
+import ch.uzh.ddis.thesis.lambda_architecture.data.serde.GenericData;
+import ch.uzh.ddis.thesis.lambda_architecture.data.serde.GenericSerde;
 import org.apache.samza.Partition;
 import org.apache.samza.config.MapConfig;
 import org.apache.samza.metrics.MetricsRegistry;
@@ -88,6 +88,8 @@ public class SRBenchQ1TaskEsperTest {
         public void shutdown(ShutdownMethod shutdownMethod) {
             // no-op
         }
+
+
     }
 
     private class TaskContextMock implements TaskContext{

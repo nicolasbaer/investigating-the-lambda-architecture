@@ -1,0 +1,13 @@
+/*
+Q5. Detect if a station is observing a blizzard.
+A blizzard is a severe snow storm characterised by low temperatures, strong winds and heavy snow lasting for at least
+three hours. Detect extreme weather conditions by combining multiple observed weather properties. This query tests the
+engines ability to produce new knowledge derived by combining existing data.
+*/
+
+SELECT s.station AS stat, avg(w.value) as wvalue, avg(a.value) as avalue
+FROM SnowfallObservation.win:time(3 hours) AS s, AirTemperature.win:time(3 hours) AS a, WindSpeed.win:time(3 hours) AS w
+WHERE s.station = a.station AND s.station = w.station
+GROUP BY s.station
+HAVING min(w.value) > 40 AND avg(a.value) < 32
+OUTPUT SNAPSHOT EVERY 10 min

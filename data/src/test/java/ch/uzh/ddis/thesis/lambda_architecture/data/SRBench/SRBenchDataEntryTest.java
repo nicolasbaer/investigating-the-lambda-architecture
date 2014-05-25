@@ -1,4 +1,4 @@
-package ch.uzh.ddis.thesis.lambda_architecture.batch.SRBench;
+package ch.uzh.ddis.thesis.lambda_architecture.data.SRBench;
 
 import org.junit.Assert;
 import org.junit.Test;

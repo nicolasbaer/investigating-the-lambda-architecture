@@ -1,6 +1,6 @@
-package ch.uzh.ddis.thesis.lambda_architecture.batch.serde;
+package ch.uzh.ddis.thesis.lambda_architecture.data.serde;
 
-import ch.uzh.ddis.thesis.lambda_architecture.batch.cache.Timestamped;
+import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.samza.serializers.Serde;
 

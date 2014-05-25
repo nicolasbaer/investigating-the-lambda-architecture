@@ -1,6 +1,7 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.cache;
 
-import ch.uzh.ddis.thesis.lambda_architecture.batch.serde.GenericData;
+import ch.uzh.ddis.thesis.lambda_architecture.data.serde.GenericData;
+import ch.uzh.ddis.thesis.lambda_architecture.data.Identifiable;
 import com.google.common.base.Optional;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnel;

@@ -1,0 +1,8 @@
+/*
+Q1. Get the rainfall observed once in an hour.
+This is a basic but important query. It tests an engines ability to handle the most basic feature of RDF/SPARQL to gain
+knowledge about the mostly spoken topic when talking about the weather.
+*/
+
+SELECT DISTINCT station, value, unit
+FROM RainfallObservation.win:time_batch(1 hour)

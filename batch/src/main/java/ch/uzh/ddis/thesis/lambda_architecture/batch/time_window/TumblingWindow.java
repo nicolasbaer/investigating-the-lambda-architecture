@@ -1,6 +1,6 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.time_window;
 
-import ch.uzh.ddis.thesis.lambda_architecture.batch.cache.Timestamped;
+import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;
 
 /**
  * Keeps track of a tumbling window.

@@ -1,7 +1,7 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.SRBench.task;
 
-import ch.uzh.ddis.thesis.lambda_architecture.batch.EsperUpdateListener;
-import ch.uzh.ddis.thesis.lambda_architecture.batch.SRBench.SRBenchDataEntry;
+import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperUpdateListener;
+import ch.uzh.ddis.thesis.lambda_architecture.data.SRBench.SRBenchDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.TimeWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.TumblingWindow;
 import com.espertech.esper.client.*;
@@ -40,7 +40,7 @@ public final class SRBenchQ3TaskEsper implements StreamTask, InitableTask{
         String message = (String) incomingMessageEnvelope.getMessage();
         SRBenchDataEntry entry = new SRBenchDataEntry(message);
 
-        if(this.timeWindow.isInWindow(entry)){
+        if(!this.timeWindow.isInWindow(entry)){
             CurrentTimeEvent timeEvent = new CurrentTimeEvent(entry.getTimestamp());
             this.esper.sendEvent(timeEvent);
             this.esper.sendEvent(entry);

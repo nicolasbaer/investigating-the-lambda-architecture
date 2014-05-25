@@ -1,10 +1,10 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.cache;
 
-import ch.uzh.ddis.thesis.lambda_architecture.batch.serde.GenericData;
+import ch.uzh.ddis.thesis.lambda_architecture.data.serde.GenericData;
+import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;
 import org.apache.samza.storage.kv.Entry;
 
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * @author Nicolas Baer <nicolas.baer@gmail.com>

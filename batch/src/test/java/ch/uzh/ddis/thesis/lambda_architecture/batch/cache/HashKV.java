@@ -42,7 +42,7 @@ public final class HashKV<K, V> implements KeyValueStore<K,V>{
         Mockito.when(metrics.deletes()).thenReturn(new Counter("deletes"));
         Mockito.when(metrics.alls()).thenReturn(new Counter("alls"));
         folder.create();
-        this.map = new LevelDbKeyValueStore(folder.getRoot(), new Options(), metrics);
+        this.map = new LevelDbKeyValueStore(folder.getRoot(), new Options(), 100, metrics);
     }
 
 

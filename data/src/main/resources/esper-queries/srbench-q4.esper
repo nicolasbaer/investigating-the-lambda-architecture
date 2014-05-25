@@ -1,0 +1,13 @@
+/*
+Q4. Get the average wind speed at the stations where the air temperature is >32 degrees in the last hour, every
+10 minutes.
+Combine values observed for multiple weather properties. This query tests the engines ability to deal with history data
+that need to be (temporarily) stored.
+*/
+
+SELECT w.station AS stat, avg(w.value) AS speed
+FROM WindSpeedObservation.win:time(1 hour) AS w, TemperatureObservation.win:time(1 hour) AS t
+WHERE w.station = t.station
+GROUP BY w.station
+HAVING avg(t.value) > 32
+OUTPUT SNAPSHOT EVERY 10 min

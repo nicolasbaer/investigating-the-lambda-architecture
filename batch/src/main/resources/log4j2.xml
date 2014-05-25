@@ -35,6 +35,7 @@
     <Loggers>
         <Logger name="ch.uzh.ddis.thesis.lambda_architecture" level="INFO" additivity="false">
             <AppenderRef ref="performance-flume-async"/>
+            <AppenderRef ref="performance-file-async"/>
             <AppenderRef ref="console"/>
         </Logger>
 

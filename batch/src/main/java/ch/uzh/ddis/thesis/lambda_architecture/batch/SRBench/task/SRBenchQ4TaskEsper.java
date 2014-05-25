@@ -1,7 +1,7 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.SRBench.task;
 
-import ch.uzh.ddis.thesis.lambda_architecture.batch.EsperUpdateListener;
-import ch.uzh.ddis.thesis.lambda_architecture.batch.SRBench.SRBenchDataEntry;
+import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperUpdateListener;
+import ch.uzh.ddis.thesis.lambda_architecture.data.SRBench.SRBenchDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.TimeWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.TumblingWindow;
 import com.espertech.esper.client.*;

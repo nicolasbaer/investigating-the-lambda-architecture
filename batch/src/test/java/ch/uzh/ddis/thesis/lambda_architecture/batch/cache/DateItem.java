@@ -1,5 +1,7 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.cache;
 
+import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;
+
 import java.io.Serializable;
 
 /**

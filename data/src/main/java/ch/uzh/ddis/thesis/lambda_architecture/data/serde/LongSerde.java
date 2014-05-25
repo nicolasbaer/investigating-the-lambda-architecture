@@ -1,4 +1,4 @@
-package ch.uzh.ddis.thesis.lambda_architecture.batch.serde;
+package ch.uzh.ddis.thesis.lambda_architecture.data.serde;
 
 import com.google.common.primitives.Longs;
 import org.apache.samza.serializers.Serde;

@@ -1,4 +1,4 @@
-package ch.uzh.ddis.thesis.lambda_architecture.batch.cache;
+package ch.uzh.ddis.thesis.lambda_architecture.data;
 
 import java.io.Serializable;
 

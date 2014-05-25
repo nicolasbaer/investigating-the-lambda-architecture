@@ -1,7 +1,7 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch;
 
 import ch.uzh.ddis.thesis.lambda_architecture.batch.cache.OffsetCache;
-import ch.uzh.ddis.thesis.lambda_architecture.batch.serde.GenericData;
+import ch.uzh.ddis.thesis.lambda_architecture.data.serde.GenericData;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.samza.config.Config;

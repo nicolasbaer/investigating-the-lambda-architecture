@@ -1,4 +1,4 @@
-package ch.uzh.ddis.thesis.lambda_architecture.batch.serde;
+package ch.uzh.ddis.thesis.lambda_architecture.data.serde;
 
 import java.io.Serializable;
 

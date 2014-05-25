@@ -1,0 +1,13 @@
+/*
+Q3. Detect if a hurricane has been observed.
+A hurricane has a sustained wind (for more than 3 hours) of at least 33 metres per second or 74 miles per hour
+(119 km/h). One might want to know if there are any extreme weather conditions among the observations.
+This query tests the engines ability to filter out the minimal amount of the streaming data to quickly compute the
+answer.
+*/
+
+SELECT station, avg(value) AS speed
+FROM WindSpeed.win:time(3 hours)
+GROUP BY station
+HAVING avg(value) > 74
+OUTPUT SNAPSHOT EVERY 10 min

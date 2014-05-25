@@ -1,6 +1,6 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch;
 
-import ch.uzh.ddis.thesis.lambda_architecture.batch.serde.GenericData;
+import ch.uzh.ddis.thesis.lambda_architecture.data.serde.GenericData;
 import org.apache.samza.storage.kv.KeyValueStore;
 
 /**

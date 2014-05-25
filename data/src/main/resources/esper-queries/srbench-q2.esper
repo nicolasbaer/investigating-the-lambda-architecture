@@ -1,0 +1,10 @@
+/*
+Q2. Get all precipitation observed once in an hour.
+Although similar to Q1, this query is much more complex, because it requires re- turning all types of precipitation.
+Since the triple patterns for different kinds of precipitations maybe different, OPTIONAL patterns are needed to
+capture the possible differences. Additionally, this query requires reasoning over all instances of the class
+PrecipitationObservation and its subclasses.
+*/
+
+SELECT DISTINCT station, value, unit
+FROM PrecipitationObservation.win:time_batch(1 hour)

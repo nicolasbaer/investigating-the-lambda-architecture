@@ -1,8 +1,8 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch;
 
 import ch.uzh.ddis.thesis.lambda_architecture.batch.cache.HashKV;
-import ch.uzh.ddis.thesis.lambda_architecture.batch.serde.GenericData;
-import ch.uzh.ddis.thesis.lambda_architecture.batch.serde.GenericSerde;
+import ch.uzh.ddis.thesis.lambda_architecture.data.serde.GenericData;
+import ch.uzh.ddis.thesis.lambda_architecture.data.serde.GenericSerde;
 import org.apache.samza.serializers.StringSerde;
 import org.apache.samza.storage.kv.KeyValueStore;
 import org.junit.Assert;
