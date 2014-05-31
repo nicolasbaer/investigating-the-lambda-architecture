@@ -5,6 +5,7 @@ import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import kafka.producer.Partitioner;
+import kafka.utils.VerifiableProperties;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -19,6 +20,21 @@ import java.util.Map;
 public final class HashBucketPartitioner implements Partitioner {
     private final HashFunction hashFunction = Hashing.md5();
     private final Map<String, Integer> mapping = new HashMap<>();
+
+
+    public HashBucketPartitioner(){
+
+    }
+
+    /**
+     * Kafka needs a constructor with the properties parameter, although we do not use the properties here. If this
+     * is not present, the Kafka API will throw an Exception.
+     * @param properties kafka properties
+     */
+    public HashBucketPartitioner(VerifiableProperties properties){
+        this();
+    }
+
 
     @Override
     public int partition(Object key, int numPartitions) {

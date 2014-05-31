@@ -3,10 +3,8 @@ package ch.uzh.ddis.thesis.lambda_architecture.data;
 /**
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public interface Identifiable {
+public interface IDataFactory<E extends IDataEntry> {
 
-
-    public String getId();
-
+    public E makeDataEntryFromCSV(String csvEntry);
 
 }

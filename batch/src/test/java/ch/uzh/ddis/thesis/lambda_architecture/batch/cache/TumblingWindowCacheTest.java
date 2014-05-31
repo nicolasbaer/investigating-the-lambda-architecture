@@ -47,7 +47,7 @@ public class TumblingWindowCacheTest {
         }
 
         Iterator<Entry<String, GenericData>> it = cache.retrieve();
-        List<DateItem> result = new ArrayList<DateItem>();
+        List<DateItem> result = new ArrayList<>();
         while(it.hasNext()){
             result.addAll((ArrayList<DateItem>) it.next().getValue().getData());
         }
@@ -60,7 +60,7 @@ public class TumblingWindowCacheTest {
         }
 
         it = cache.retrieve();
-        result = new ArrayList<DateItem>();
+        result = new ArrayList<>();
         while(it.hasNext()){
             result.addAll((ArrayList<DateItem>) it.next().getValue().getData());
         }

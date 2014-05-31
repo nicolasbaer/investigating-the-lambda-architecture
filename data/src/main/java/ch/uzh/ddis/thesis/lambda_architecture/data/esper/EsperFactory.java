@@ -70,7 +70,7 @@ public class EsperFactory {
     public static EPServiceProvider makeEsperServiceProviderSRBench(String name){
         Configuration config = new Configuration();
 
-        Map<String, Object> supertype = new HashMap<String, Object>();
+        Map<String, Object> supertype = new HashMap<>();
         supertype.put("timestamp", Long.class);
         supertype.put("station", String.class);
         supertype.put("measurement", String.class);

@@ -108,7 +108,7 @@ public class SlidingWindowCache<E extends Timestamped> implements TimeWindowCach
             // it's safe to assume the list is serializable, since we use an array list
             store.put(key, new GenericData<ArrayList>(messages));
         } else{
-            ArrayList<E> messages = new ArrayList<E>();
+            ArrayList<E> messages = new ArrayList<>();
             messages.add(message);
             this.store.put(key, new GenericData<ArrayList>(messages));
         }

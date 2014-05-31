@@ -1,7 +1,6 @@
 package ch.uzh.ddis.thesis.lambda_architecture.data.SRBench;
 
-import ch.uzh.ddis.thesis.lambda_architecture.data.Identifiable;
-import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;
+import ch.uzh.ddis.thesis.lambda_architecture.data.IDataEntry;
 import org.apache.commons.lang.math.NumberUtils;
 
 import java.io.Serializable;
@@ -13,7 +12,7 @@ import java.util.Map;
  *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public final class SRBenchDataEntry implements Timestamped, Identifiable<String>, Serializable{
+public final class SRBenchDataEntry implements IDataEntry, Serializable{
 
     private final long timestamp;
     private final String station;
@@ -48,7 +47,7 @@ public final class SRBenchDataEntry implements Timestamped, Identifiable<String>
 
 
     private Map<String, Object> toMap(){
-        Map<String, Object> map = new HashMap<String, Object>();
+        Map<String, Object> map = new HashMap<>();
         map.put("timestamp", this.timestamp);
         map.put("station", this.station);
         map.put("measurement", this.measurementType.name());
@@ -63,6 +62,17 @@ public final class SRBenchDataEntry implements Timestamped, Identifiable<String>
 
         return map;
     }
+
+    @Override
+    public String getTopic() {
+        return observationType.name();
+    }
+
+    @Override
+    public String getPartitionKey() {
+        return station;
+    }
+
 
     public long getTimestamp() {
         return timestamp;

@@ -1,5 +1,7 @@
 package ch.uzh.ddis.thesis.lambda_architecture.coordination.producer;
 
+import ch.uzh.ddis.thesis.lambda_architecture.data.IDataEntry;
+import ch.uzh.ddis.thesis.lambda_architecture.data.IDataFactory;
 import com.ecyrd.speed4j.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,32 +15,28 @@ import java.io.*;
  *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public class CSVAdaptor implements Runnable{
+public class CSVAdaptor<E extends IDataEntry> implements Runnable{
     private static final Logger logger = LogManager.getLogger();
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
-    private static final String performanceTopicThroughput = "kafka-producer-throughput";
-    private static final String performanceTopicTotal = "kafka-producer-total";
-
-    private final static String delimiter = ",";
+    private static final String performanceTopicThroughput = "csvreaderthroughput";
+    private static final String performanceTopicTotal = "csvreadertotal";
 
     private final FileReader csvFileReader;
-    private final int keyIndex;
-    private final int topicIndex;
-    private final KafkaProducer<String, String> producer;
+    private final SystemTimeSynchronizer<E> synchronizer;
+    private final IDataFactory<E> dataFactory;
     private final String csvName;
+    private final int queueId;
 
     /**
      * @param csv CSV File to read from
-     * @param keyIndex index of the key field, the index starts at 0
-     * @param producer kafka producer to send messages
+     * @param synchronizer time synchronizer to append data to.
      */
-    public CSVAdaptor(File csv, int keyIndex, int topicIndex, KafkaProducer<String, String> producer)
-            throws FileNotFoundException {
-        this.keyIndex = keyIndex;
-        this.producer = producer;
+    public CSVAdaptor(File csv, SystemTimeSynchronizer<E> synchronizer, IDataFactory<E> dataFactory, int queueId) throws FileNotFoundException {
+        this.synchronizer = synchronizer;
         this.csvFileReader = new FileReader(csv);
-        this.topicIndex = topicIndex;
+        this.dataFactory = dataFactory;
         this.csvName = csv.getName();
+        this.queueId = queueId;
     }
 
     /**
@@ -51,11 +49,7 @@ public class CSVAdaptor implements Runnable{
             String line;
             int performanceCounter = 0;
             while ((line = reader.readLine()) != null) {
-                String[] splitLine = line.split(delimiter);
-                String key = splitLine[keyIndex];
-                String topic = splitLine[topicIndex];
-
-                producer.send(topic, key, line);
+                synchronizer.addData(queueId, dataFactory.makeDataEntryFromCSV(line));
 
                 if(performanceCounter % 1000 == 0){
                     watch.stop();

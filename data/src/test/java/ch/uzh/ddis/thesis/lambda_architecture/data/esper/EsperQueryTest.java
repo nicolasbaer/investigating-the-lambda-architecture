@@ -1,8 +1,6 @@
 package ch.uzh.ddis.thesis.lambda_architecture.data.esper;
 
 import ch.uzh.ddis.thesis.lambda_architecture.data.SRBench.SRBenchDataEntry;
-import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperFactory;
-import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperUpdateListener;
 import com.espertech.esper.client.*;
 import com.espertech.esper.client.time.CurrentTimeEvent;
 import com.google.common.io.Resources;
@@ -46,10 +44,13 @@ public class EsperQueryTest {
             esper.sendEvent(new CurrentTimeEvent(entry.getTimestamp()));
             esper.sendEvent(entry.getMap(), entry.getMeasurement());
 
+            System.out.println(line);
+
             if(updateListener.hasNewData()){
                 Pair<EventBean[], EventBean[]> eventDataTouple = updateListener.getNewData();
                 EventBean[] newEvents = eventDataTouple.getValue0();
-
+                System.out.println("results");
+                System.out.println("..........................................");
                 for(int i = 0; i < newEvents.length; i++){
                     String station = (String) newEvents[i].get("station");
                     String value = String.valueOf(newEvents[i].get("value"));
@@ -271,7 +272,7 @@ public class EsperQueryTest {
     }
 
 
-
+/*
     @Test
     public void testSRBenchQ6() throws IOException {
         URL queryUrl = EsperFactory.class.getResource("/esper-queries/srbench-q6.esper");
@@ -317,5 +318,5 @@ public class EsperQueryTest {
         }
     }
 
-
+*/
 }

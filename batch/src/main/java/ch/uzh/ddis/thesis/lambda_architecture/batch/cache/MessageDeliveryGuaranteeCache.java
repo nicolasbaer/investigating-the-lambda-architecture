@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets;
  *
  * @param <E> Identifiable message to check
  */
-public class MessageDeliveryGuaranteeCache<E extends Identifiable<String>> {
+public class MessageDeliveryGuaranteeCache<E extends Identifiable> {
     private final KeyValueStore<String, GenericData> store;
     private final BloomFilter bloomFilter;
 
@@ -52,9 +52,9 @@ public class MessageDeliveryGuaranteeCache<E extends Identifiable<String>> {
         return processed;
     }
 
-    private class IdentifiableFunnel implements Funnel<Identifiable<String>>{
+    private class IdentifiableFunnel implements Funnel<Identifiable>{
         @Override
-        public void funnel(Identifiable<String> entry, PrimitiveSink into) {
+        public void funnel(Identifiable entry, PrimitiveSink into) {
             into.putString(entry.getId(), StandardCharsets.UTF_8);
         }
     }

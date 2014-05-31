@@ -22,7 +22,7 @@ public class MessageDeliveryGuaranteeCacheTest {
         MessageDeliveryGuaranteeCache<StringItem> mdgc = new MessageDeliveryGuaranteeCache<>(store, 1010);
 
         for(int i = 0; i < 1000; i++){
-            mdgc.checkAndCache(new StringItem(new Integer(i).toString()));
+            mdgc.checkAndCache(new StringItem(Integer.toString(i)));
         }
 
 

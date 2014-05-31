@@ -1,0 +1,16 @@
+/*
+Q6. Get the stations that have observed extremely low visibility in the last hour.
+Next to direct measurements of low visibility (<10 centimetres), heavy snowfall and rainfall (> 30 centimetres) also
+cause low visibility. This is a more complex example of detecting extreme weather conditions, which requires not only
+gaining knowledge explicitly contained in the data, but also deriving implicit knowledge from data sources.
+*/
+
+SELECT v.station AS stat
+FROM RainfallObservation(value>30).win:time(1 hour) AS r
+    join
+    SnowfallObservation.win:time(1 hour) AS s
+    FULL OUTER JOIN  VisibilityObservation(value<10).win:time(1 hour) AS v
+WHERE v.station = r.station AND v.station = s.station
+GROUP BY v.station, r.station
+HAVING v.value < 10 OR (r.value > 30 AND s.value = true)
+OUTPUT SNAPSHOT EVERY 1 hour
