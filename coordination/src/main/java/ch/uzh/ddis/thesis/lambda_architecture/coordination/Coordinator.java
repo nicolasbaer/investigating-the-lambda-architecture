@@ -40,6 +40,9 @@ public class Coordinator {
     @Parameter(names = "-startSysTime", description = "system time to start producing in ms")
     public long startSysTime = System.currentTimeMillis() + 5000;
 
+    @Parameter(names = "-startDataTime", description = "start time of the first data item.")
+    public long startDataTime = -1;
+
     @Parameter(names = "-ticksPerMs", description = "data ticks (ms) per system ms")
     public long ticksPerMs = 1000;
 
@@ -61,7 +64,7 @@ public class Coordinator {
         properties.load(new FileInputStream(this.kafkaPropertiesPath));
 
         KafkaProducer<SRBenchDataEntry> producer = new KafkaProducer<>(properties, this.topic, this.dataTopic);
-        SystemTimeSynchronizer<SRBenchDataEntry> synchronizer = new SystemTimeSynchronizer(producer, this.startSysTime, this.ticksPerMs);
+        SystemTimeSynchronizer<SRBenchDataEntry> synchronizer = new SystemTimeSynchronizer(producer, this.startSysTime, this.ticksPerMs, this.startDataTime);
 
         Collection<File> files = this.getFilesFromPath();
         ExecutorService executor = Executors.newFixedThreadPool(files.size() + 1);

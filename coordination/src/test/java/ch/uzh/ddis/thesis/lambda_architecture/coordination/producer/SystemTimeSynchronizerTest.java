@@ -19,7 +19,7 @@ public class SystemTimeSynchronizerTest {
 
     @Test
     public void testRegisterDataInput() {
-        SystemTimeSynchronizer<SRBenchDataEntry> synchronizer = new SystemTimeSynchronizer<SRBenchDataEntry>(Mockito.mock(KafkaProducer.class), 0, 0);
+        SystemTimeSynchronizer<SRBenchDataEntry> synchronizer = new SystemTimeSynchronizer<SRBenchDataEntry>(Mockito.mock(KafkaProducer.class), 0, 0, -1);
         for(int i = 0; i < 10; i++){
             Assert.assertEquals(synchronizer.registerDataInput(), i);
         }
@@ -27,7 +27,7 @@ public class SystemTimeSynchronizerTest {
 
     @Test
     public void testRemoveDataInput() {
-        SystemTimeSynchronizer<SRBenchDataEntry> synchronizer = new SystemTimeSynchronizer<SRBenchDataEntry>(Mockito.mock(KafkaProducer.class), 0, 0);
+        SystemTimeSynchronizer<SRBenchDataEntry> synchronizer = new SystemTimeSynchronizer<SRBenchDataEntry>(Mockito.mock(KafkaProducer.class), 0, 0, -1);
         int queueId = synchronizer.registerDataInput();
 
         synchronizer.removeDataInput(queueId);
@@ -41,14 +41,14 @@ public class SystemTimeSynchronizerTest {
     }
 
     @Test
-    public void testRun() throws Exception {
+    public void testRun() throws InterruptedException{
         final ArrayList<Pair<Long, Long>> results = new ArrayList<>();
         KafkaProducer<TestData> producer = Mockito.mock(KafkaProducer.class);
 
         Mockito.doAnswer((new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
-                TestData data = (TestData)invocation.getArguments()[2];
+                TestData data = (TestData)invocation.getArguments()[0];
                 Pair<Long, Long> pair = new Pair<>(System.currentTimeMillis(), data.getTimestamp());
                 results.add(pair);
 
@@ -58,7 +58,7 @@ public class SystemTimeSynchronizerTest {
 
         final long systemTimeStart = System.currentTimeMillis() + 1000;
         long ticksPerMs = 1000;
-        final SystemTimeSynchronizer<TestData> synchronizer = new SystemTimeSynchronizer<>(producer, systemTimeStart, ticksPerMs);
+        final SystemTimeSynchronizer<TestData> synchronizer = new SystemTimeSynchronizer<>(producer, systemTimeStart, ticksPerMs, -1);
 
         ExecutorService executor = Executors.newFixedThreadPool(5);
 

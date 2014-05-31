@@ -26,15 +26,25 @@ public final class SystemTimeSynchronizer<E extends IDataEntry> implements Runna
     private final KafkaProducer<E> producer;
     private final long systemTimeStart;
     private final long ticksPerMs;
+    private final long dataTimeStart;
     private final ArrayList<ArrayBlockingQueue<Pair<E, Integer>>> queues;
 
     private ArrayList<Boolean> removeQueue;
 
-
-    public SystemTimeSynchronizer(KafkaProducer<E> producer, long systemTimeStart, long ticksPerMs){
+    /**
+     *
+     * @param producer kafka producer to write to
+     * @param systemTimeStart system time to start producing
+     * @param ticksPerMs data ticks (ms) per system ms
+     * @param dataTimeStart start time of the dataset, if `-1` it is computed from the files of this instance.
+     *                      A value for this property might be a good idea in case you run this on multiple machines
+     *                      with different data sets.
+     */
+    public SystemTimeSynchronizer(KafkaProducer<E> producer, long systemTimeStart, long ticksPerMs, long dataTimeStart){
         this.producer = producer;
         this.systemTimeStart = systemTimeStart;
         this.ticksPerMs = ticksPerMs;
+        this.dataTimeStart = dataTimeStart;
 
         this.queues = new ArrayList<>();
         this.removeQueue = new ArrayList<>();
@@ -181,7 +191,10 @@ public final class SystemTimeSynchronizer<E extends IDataEntry> implements Runna
 
     @Override
     public void run() {
-        long firstTimestamp = this.getFirstTimestamp();
+        long firstTimestamp = this.dataTimeStart;
+        if(this.dataTimeStart == -1) {
+             firstTimestamp = this.getFirstTimestamp();
+        }
         this.processQueues(firstTimestamp, this.systemTimeStart, this.ticksPerMs);
     }
 
