@@ -1,0 +1,8 @@
+/*
+Q7. Detect stations that are recently broken.
+If a station suddenly stops producing (observation) data, it might be broken. Knowing the stability of the stations is
+an important issue, which can be deduced from absent data.
+This query tests the engines ability to cope with the dynamic properties that are specific for streaming data.
+*/
+
+select a.station as stat from pattern[every a=srBench -> (timer:interval(1 hour) and not srBench(station=a.station))]

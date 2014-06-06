@@ -39,7 +39,7 @@ public class EsperUpdateListener implements UpdateListener{
 
     /**
      * get the new data from the listener.
-     * @return touple (new events, old events) for the latest update.
+     * @return tuple (new events, old events) for the latest update.
      */
     public Pair<EventBean[], EventBean[]> getNewData(){
         this.newData = false;

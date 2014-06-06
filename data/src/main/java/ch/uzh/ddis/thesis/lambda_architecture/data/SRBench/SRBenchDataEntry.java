@@ -24,9 +24,11 @@ public final class SRBenchDataEntry implements IDataEntry, Serializable{
     private final SRBenchDataTypes.Observation observationType;
     private final SRBenchDataTypes.Measurement measurementType;
     private final Map<String, Object> map;
+    private final String stringRepresentation;
 
 
     public SRBenchDataEntry(String csvEntry){
+        this.stringRepresentation = csvEntry;
         String[] line = csvEntry.split(",");
 
         this.timestamp = Long.valueOf(line[0]) * 1000;
@@ -73,6 +75,10 @@ public final class SRBenchDataEntry implements IDataEntry, Serializable{
         return station;
     }
 
+    @Override
+    public String toString() {
+        return this.stringRepresentation;
+    }
 
     public long getTimestamp() {
         return timestamp;

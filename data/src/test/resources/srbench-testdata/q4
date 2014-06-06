@@ -1,0 +1,12 @@
+1253052060,C4431,AirTemperature,33.0,fahrenheit,TemperatureObservation
+1253052060,C4431,WindSpeed,20.0,milesPerHour,WindSpeedObservation
+1253052060,C4431,WindSpeed,26.0,milesPerHour,WindSpeedObservation
+1253052060,CVAV3,AirTemperature,15.0,fahrenheit,TemperatureObservation
+1253052060,CVAV3,WindSpeed,100.0,milesPerHour,WindSpeedObservation
+1253052060,GCAP4,AirTemperature,34.0,fahrenheit,TemperatureObservation
+1253052060,GCAP4,WindSpeed,20.0,milesPerHour,WindSpeedObservation
+1253052060,GCAP4,WindSpeed,30.0,milesPerHour,WindSpeedObservation
+1253055661,C4431,AirTemperature,82.0,fahrenheit,TemperatureObservation
+1253055661,CVAV3,AirTemperature,82.0,fahrenheit,TemperatureObservation
+1253055661,CVAV3,WindSpeed,20.0,milesPerHour,WindSpeedObservation
+1253055661,CVAV3,WindSpeed,40.0,milesPerHour,WindSpeedObservation

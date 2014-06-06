@@ -5,7 +5,7 @@ Combine values observed for multiple weather properties. This query tests the en
 that need to be (temporarily) stored.
 */
 
-SELECT w.station AS stat, avg(w.value) AS speed
+SELECT w.station AS stat, avg(w.value) AS speed, avg(t.value) as temperature
 FROM WindSpeedObservation.win:time(1 hour) AS w, TemperatureObservation.win:time(1 hour) AS t
 WHERE w.station = t.station
 GROUP BY w.station

@@ -1,0 +1,17 @@
+1253052060,CAPP4,PrecipitationAccumulated,15.18,centimeters,RainfallObservation
+1253052060,C4431,DewPoint,71.2,fahrenheit,TemperatureObservation
+1253052060,C4431,WindSpeed,78.0,milesPerHour,WindSpeedObservation
+1253052060,C4431,AirTemperature,82.0,fahrenheit,TemperatureObservation
+1253052060,C4431,RelativeHumidity,70.0,percent,RelativeHumidityObservation
+1253052060,C4431,WindDirection,33.0,degrees,WindDirectionObservation
+1253052060,C4431,Precipitation,0.0,centimeters,RainfallObservation
+1253052360,GARP4,PrecipitationAccumulated,6.41,centimeters,RainfallObservation
+1253052540,CVAV3,RelativeHumidity,70.0,percent,RelativeHumidityObservation
+1253052540,CVAV3,DewPoint,67.4,fahrenheit,TemperatureObservation
+1253052540,CVAV3,AirTemperature,78.0,fahrenheit,TemperatureObservation
+1253052540,C4431,WindSpeed,80.0,milesPerHour,WindSpeedObservation
+1253052540,C4431,WindSpeed,99.0,milesPerHour,WindSpeedObservation
+1253052540,C4431,WindSpeed,72.0,milesPerHour,WindSpeedObservation
+1253052540,C4431,WindSpeed,80.0,milesPerHour,WindSpeedObservation
+1253056140,C4431,WindSpeed,80.0,milesPerHour,WindSpeedObservation
+1253056140,CVAV3,WindSpeed,3.0,milesPerHour,WindSpeedObservation

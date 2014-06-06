@@ -1,0 +1,14 @@
+1049615400,PABR,SnowDepth,true,boolean,SnowfallObservation
+1049615400,PABR,AirTemperature,-9.4,fahrenheit,TemperatureObservation
+1049615400,PABR,WindSpeed,43.0,milesPerHour,WindSpeedObservation
+1049615400,PAEN,SnowDepth,true,boolean,SnowfallObservation
+1049615400,PAEN,AirTemperature,-9.4,fahrenheit,TemperatureObservation
+1049615400,PAEN,WindSpeed,39.0,milesPerHour,WindSpeedObservation
+1049615400,PAHO,AirTemperature,-9.4,fahrenheit,TemperatureObservation
+1049615400,PAHO,WindSpeed,43.0,milesPerHour,WindSpeedObservation
+1049615400,PATK,SnowDepth,true,boolean,SnowfallObservation
+1049615400,PATK,AirTemperature,33,fahrenheit,TemperatureObservation
+1049615400,PATK,WindSpeed,43.0,milesPerHour,WindSpeedObservation
+1049626201,PABR,SnowDepth,true,boolean,SnowfallObservation
+1049626201,PABR,AirTemperature,10,fahrenheit,TemperatureObservation
+1049626201,PABR,WindSpeed,48.0,milesPerHour,WindSpeedObservation

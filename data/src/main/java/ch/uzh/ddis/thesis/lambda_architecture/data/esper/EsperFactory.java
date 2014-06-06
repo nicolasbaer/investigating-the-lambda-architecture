@@ -88,11 +88,11 @@ public class EsperFactory {
         config.addEventType(SRBenchDataTypes.srBench, supertype);
 
         for(String observation : observations){
-            config.addEventType(observation, supertype);
+            config.addEventType(observation, supertype, new String[] {SRBenchDataTypes.srBench});
         }
 
         for(String observation : observationsDouble){
-            config.addEventType(observation, doubleMeasurement);
+            config.addEventType(observation, doubleMeasurement, new String[] {SRBenchDataTypes.srBench});
         }
 
 
