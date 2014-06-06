@@ -4,6 +4,8 @@ import ch.uzh.ddis.thesis.lambda_architecture.data.IDataEntry;
 import com.google.common.base.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 import org.javatuples.Pair;
 
 import java.util.ArrayList;
@@ -20,6 +22,8 @@ import java.util.concurrent.ArrayBlockingQueue;
  */
 public final class SystemTimeSynchronizer<E extends IDataEntry> implements Runnable {
     private static final Logger logger = LogManager.getLogger();
+    private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
+    private static final String lagTopic = "synchronizerlag";
 
     private static final int MAX_QUEUE_SIZE = 1000;
 
@@ -170,6 +174,9 @@ public final class SystemTimeSynchronizer<E extends IDataEntry> implements Runna
                     } catch (InterruptedException e) {
                         logger.error("could not wait for data time to align with system time", e);
                     }
+                } else{
+                    long lag = data.getTimestamp() - currentDataTime;
+                    logger.info(performance, "topic={} lag={} currentSystemTime={} currentDataTime={}", lagTopic, lag, currentSystemTime, data.getTimestamp());
                 }
             }
 
