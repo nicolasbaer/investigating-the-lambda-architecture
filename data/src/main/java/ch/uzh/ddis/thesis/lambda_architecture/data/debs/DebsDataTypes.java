@@ -7,7 +7,7 @@ package ch.uzh.ddis.thesis.lambda_architecture.data.debs;
  */
 public class DebsDataTypes {
 
-    public static final String debs = "debs";
+    public static final String Debs = "Debs";
 
     public enum Measurement {
         Work,

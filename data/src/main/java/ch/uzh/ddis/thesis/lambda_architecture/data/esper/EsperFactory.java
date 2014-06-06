@@ -1,6 +1,7 @@
 package ch.uzh.ddis.thesis.lambda_architecture.data.esper;
 
 import ch.uzh.ddis.thesis.lambda_architecture.data.SRBench.SRBenchDataTypes;
+import ch.uzh.ddis.thesis.lambda_architecture.data.debs.DebsDataTypes;
 import com.espertech.esper.client.Configuration;
 import com.espertech.esper.client.EPServiceProvider;
 import com.espertech.esper.client.EPServiceProviderManager;
@@ -104,6 +105,43 @@ public class EsperFactory {
         for(Map.Entry<String, String[]> entry : measurementsBoolean.entrySet()){
             config.addEventType(entry.getKey(), booleanMeasurement, entry.getValue());
         }
+
+        // enables esper to work on timestamp of event instead of system time
+        config.getEngineDefaults().getThreading().setInternalTimerEnabled(false);
+
+        EPServiceProvider cep = EPServiceProviderManager.getProvider(name, config);
+
+        return cep;
+    }
+
+
+    /**
+     * Generates an esper service provider for the debs dataset. The provider is aware of three types:
+     * - the supertype Debs
+     * - the measurement type Work
+     * - the measurement type Load
+     *
+     * In addition the esper service provider will work with data time instead of system time.
+     *
+     * @param name name of the esper service
+     * @return initialized esper service provider
+     */
+    public static EPServiceProvider makeEsperServiceProviderDebs(String name){
+        Configuration config = new Configuration();
+
+        Map<String, Object> supertype = new HashMap<>();
+        supertype.put("timestamp", Long.class);
+        supertype.put("rowId", Long.class);
+        supertype.put("value", Double.class);
+        supertype.put("type", String.class);
+        supertype.put("plugId", Integer.class);
+        supertype.put("householdId", Integer.class);
+        supertype.put("houseId", Integer.class);
+
+        config.addEventType(DebsDataTypes.Debs, supertype);
+        config.addEventType(DebsDataTypes.Measurement.Work.name(), supertype, new String[] {DebsDataTypes.Debs});
+        config.addEventType(DebsDataTypes.Measurement.Load.name(), supertype, new String[] {DebsDataTypes.Debs});
+
 
         // enables esper to work on timestamp of event instead of system time
         config.getEngineDefaults().getThreading().setInternalTimerEnabled(false);
