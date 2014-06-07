@@ -1,0 +1,3 @@
+SELECT houseId, householdId, plugId, avg(value) as load
+FROM Load.win:time_batch(1 minutes)
+GROUP BY houseId, householdId, plugId

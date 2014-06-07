@@ -1,0 +1,56 @@
+SELECT
+    house.houseId as house,
+    median(house.value) as med
+FROM
+    Load.win:time_batch(%HOURS% hour) as house
+GROUP BY
+    house.houseId
+
+
+
+
+
+
+
+/*
+
+select
+    house.houseId as house,
+    (select count(*) from Load.std:groupwin(houseId, householdId, plugId).win:time(1 hour) as plug where plug.houseId = house.houseId) as pct,
+    median(house.value) as med
+from
+    Load.win:time_batch(1 hour) as house
+group by house.houseId
+
+
+
+select
+    plug.houseId as house,
+    count(plug, median(plug.value) >
+        (select
+            median(house.value)
+         from
+            Load.win:time_batch(1 hour) as house
+         where
+            house.houseId = plug.houseId
+         group by
+            house.houseId)) as pct,
+    median(plug.value) as med
+from
+    Load.win:time_batch(1 hour) as plug
+group by
+    plug.houseId
+
+
+
+select
+    house.houseId as house, count(plug) as pct, median(house.value) as med
+from
+    Load.std:groupwin(houseId, householdId, plugId).win:time_batch(1 hour) as plug,
+    Load.std:groupwin(houseId).win:time_batch(1 hour) as house
+where
+    house.houseId = plug.houseId and house.householdId = plug.householdId and house.plugId = plug.plugId
+group by
+    plug.houseId
+
+*/

@@ -45,6 +45,7 @@ public class DebsDataEntry implements IDataEntry {
 
     private Map<String, Object> toMap(){
         Map<String, Object> map = new HashMap<>();
+        map.put("id", this.id);
         map.put("timestamp", this.timestamp);
         map.put("rowId", this.rowId);
         map.put("value", this.value);

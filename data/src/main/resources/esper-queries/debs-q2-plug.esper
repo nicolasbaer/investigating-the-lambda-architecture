@@ -1,0 +1,9 @@
+SELECT
+    plug.houseId as house,
+    plug.householdId as household,
+    plug.plugId as plugId,
+    median(plug.value) as med
+FROM
+    Load.win:time_batch(%HOURS% hour) as plug
+GROUP BY
+    plug.houseId, plug.householdId, plug.plugId

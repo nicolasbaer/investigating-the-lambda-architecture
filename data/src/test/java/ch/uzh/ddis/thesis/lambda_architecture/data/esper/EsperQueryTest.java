@@ -1,6 +1,7 @@
 package ch.uzh.ddis.thesis.lambda_architecture.data.esper;
 
 import ch.uzh.ddis.thesis.lambda_architecture.data.SRBench.SRBenchDataEntry;
+import ch.uzh.ddis.thesis.lambda_architecture.data.debs.DebsDataEntry;
 import com.espertech.esper.client.*;
 import com.espertech.esper.client.time.CurrentTimeEvent;
 import com.google.common.io.Resources;
@@ -23,7 +24,7 @@ public class EsperQueryTest {
         URL queryUrl = EsperFactory.class.getResource("/esper-queries/srbench-q1.esper");
         String query = Resources.toString(queryUrl, StandardCharsets.UTF_8);
 
-        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench("test-q1");
+        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench("test-srbench-q1");
         EPAdministrator cepAdm = eps.getEPAdministrator();
         EPStatement cepStatement = cepAdm.createEPL(query);
         EsperUpdateListener updateListener = new EsperUpdateListener();
@@ -105,7 +106,7 @@ public class EsperQueryTest {
         URL queryUrl = EsperFactory.class.getResource("/esper-queries/srbench-q2.esper");
         String query = Resources.toString(queryUrl, StandardCharsets.UTF_8);
 
-        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench("test-q1");
+        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench("test-srbench-q2");
         EPAdministrator cepAdm = eps.getEPAdministrator();
         EPStatement cepStatement = cepAdm.createEPL(query);
         EsperUpdateListener updateListener = new EsperUpdateListener();
@@ -188,7 +189,7 @@ public class EsperQueryTest {
         URL queryUrl = EsperFactory.class.getResource("/esper-queries/srbench-q3.esper");
         String query = Resources.toString(queryUrl, StandardCharsets.UTF_8);
 
-        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench("test-q1");
+        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench("test-srbench-q3");
         EPAdministrator cepAdm = eps.getEPAdministrator();
         EPStatement cepStatement = cepAdm.createEPL(query);
         EsperUpdateListener updateListener = new EsperUpdateListener();
@@ -246,7 +247,7 @@ public class EsperQueryTest {
         URL queryUrl = EsperFactory.class.getResource("/esper-queries/srbench-q4.esper");
         String query = Resources.toString(queryUrl, StandardCharsets.UTF_8);
 
-        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench("test");
+        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench("test-srbench-q4");
         EPAdministrator cepAdm = eps.getEPAdministrator();
         EPStatement cepStatement = cepAdm.createEPL(query);
         EsperUpdateListener updateListener = new EsperUpdateListener();
@@ -323,7 +324,7 @@ public class EsperQueryTest {
         URL queryUrl = EsperFactory.class.getResource("/esper-queries/srbench-q5.esper");
         String query = Resources.toString(queryUrl, StandardCharsets.UTF_8);
 
-        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench("test");
+        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench("test-srbench-q5");
         EPAdministrator cepAdm = eps.getEPAdministrator();
         EPStatement cepStatement = cepAdm.createEPL(query);
         EsperUpdateListener updateListener = new EsperUpdateListener();
@@ -404,7 +405,7 @@ public class EsperQueryTest {
         String querySnowfall = Resources.toString(queryUrlSnowfall, StandardCharsets.UTF_8);
         String queryVisibility = Resources.toString(queryUrlVisibility, StandardCharsets.UTF_8);
 
-        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench("test");
+        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench("test-srbench-q6");
         EPAdministrator cepAdm = eps.getEPAdministrator();
         EPStatement cepStatementRainfall = cepAdm.createEPL(queryRainfall);
         EPStatement cepStatementSnowfall = cepAdm.createEPL(querySnowfall);
@@ -509,7 +510,7 @@ public class EsperQueryTest {
         URL queryUrl = EsperFactory.class.getResource("/esper-queries/srbench-q7.esper");
         String query = Resources.toString(queryUrl, StandardCharsets.UTF_8);
 
-        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench("test");
+        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench("test-srbench-q7");
         EPAdministrator cepAdm = eps.getEPAdministrator();
         EPStatement cepStatement = cepAdm.createEPL(query);
         EsperUpdateListener updateListener = new EsperUpdateListener();
@@ -559,5 +560,324 @@ public class EsperQueryTest {
         Assert.assertEquals(results.get(1), "KMMV");
         Assert.assertEquals(results.get(2), "KMMV");
         Assert.assertEquals(results.size(), 3);
+    }
+
+
+
+    @Test
+    public void testDebsQ1Min1Plug() throws IOException {
+        URL queryUrl = EsperFactory.class.getResource("/esper-queries/debs-q1-plug.esper");
+        String query = Resources.toString(queryUrl, StandardCharsets.UTF_8);
+        query = query.replace("%MINUTES%", "1");
+
+        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderDebs("test-debs-q1-plug");
+        EPAdministrator cepAdm = eps.getEPAdministrator();
+        EPStatement cepStatement = cepAdm.createEPL(query);
+        EsperUpdateListener updateListener = new EsperUpdateListener();
+        cepStatement.addListener(updateListener);
+        EPRuntime esper = eps.getEPRuntime();
+
+        String csvPath = getClass().getClassLoader().getResource("debs-testdata/q1-1min-plug").getPath();
+        File csv = new File(csvPath);
+
+        final ArrayList<String> results = new ArrayList<>();
+
+        BufferedReader reader = new BufferedReader(new FileReader(csv));
+        String line = null;
+        long lastTimestamp = 0;
+        while((line = reader.readLine()) != null){
+            DebsDataEntry entry = new DebsDataEntry(line);
+            lastTimestamp = entry.getTimestamp();
+            esper.sendEvent(new CurrentTimeEvent(entry.getTimestamp()));
+            esper.sendEvent(entry.getMap(), entry.getType().name());
+
+            if(updateListener.hasNewData()){
+                Pair<EventBean[], EventBean[]> eventDataTouple = updateListener.getNewData();
+                EventBean[] newEvents = eventDataTouple.getValue0();
+
+                for(int i = 0; i < newEvents.length; i++){
+                    String houseId = String.valueOf(newEvents[i].get("houseId"));
+                    String householdId = String.valueOf(newEvents[i].get("householdId"));
+                    String plugId = String.valueOf(newEvents[i].get("plugId"));
+                    Double load = (Double) newEvents[i].get("load");
+
+                    StringBuilder resultBuilder = new StringBuilder();
+                    resultBuilder.append(houseId)
+                            .append(",")
+                            .append(householdId)
+                            .append(",")
+                            .append(plugId)
+                            .append(",")
+                            .append(load);
+
+
+                    results.add(resultBuilder.toString());
+                }
+            }
+        }
+
+        esper.sendEvent(new CurrentTimeEvent(lastTimestamp + (1000 * 60 * 60 * 60)));
+
+        if(updateListener.hasNewData()){
+            Pair<EventBean[], EventBean[]> eventDataTouple = updateListener.getNewData();
+            EventBean[] newEvents = eventDataTouple.getValue0();
+
+            for(int i = 0; i < newEvents.length; i++){
+                String houseId = String.valueOf(newEvents[i].get("houseId"));
+                String householdId = String.valueOf(newEvents[i].get("householdId"));
+                String plugId = String.valueOf(newEvents[i].get("plugId"));
+                Double load = (Double) newEvents[i].get("load");
+
+                StringBuilder resultBuilder = new StringBuilder();
+                resultBuilder.append(houseId)
+                        .append(",")
+                        .append(householdId)
+                        .append(",")
+                        .append(plugId)
+                        .append(",")
+                        .append(load);
+
+
+                results.add(resultBuilder.toString());
+            }
+        }
+
+
+        Assert.assertEquals(results.get(0), "0,0,2,7.5");
+        Assert.assertEquals(results.get(1), "0,0,3,0.0");
+        Assert.assertEquals(results.get(2), "0,0,11,25.0");
+        Assert.assertEquals(results.get(3), "0,0,2,10.0");
+        Assert.assertEquals(results.get(4), "0,0,3,0.0");
+        Assert.assertEquals(results.get(5), "0,0,11,19.0");
+    }
+
+    @Test
+    public void testDebsQ1Min1House() throws IOException {
+        URL queryUrl = EsperFactory.class.getResource("/esper-queries/debs-q1-house.esper");
+        String query = Resources.toString(queryUrl, StandardCharsets.UTF_8);
+        query = query.replace("%MINUTES%", "1");
+
+        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderDebs("test-debs-q1-house");
+        EPAdministrator cepAdm = eps.getEPAdministrator();
+        EPStatement cepStatement = cepAdm.createEPL(query);
+        EsperUpdateListener updateListener = new EsperUpdateListener();
+        cepStatement.addListener(updateListener);
+        EPRuntime esper = eps.getEPRuntime();
+
+        String csvPath = getClass().getClassLoader().getResource("debs-testdata/q1-1min-house").getPath();
+        File csv = new File(csvPath);
+
+        final ArrayList<String> results = new ArrayList<>();
+
+        BufferedReader reader = new BufferedReader(new FileReader(csv));
+        String line = null;
+        long lastTimestamp = 0;
+        while((line = reader.readLine()) != null){
+            DebsDataEntry entry = new DebsDataEntry(line);
+            lastTimestamp = entry.getTimestamp();
+            esper.sendEvent(new CurrentTimeEvent(entry.getTimestamp()));
+            esper.sendEvent(entry.getMap(), entry.getType().name());
+
+            if(updateListener.hasNewData()){
+                Pair<EventBean[], EventBean[]> eventDataTouple = updateListener.getNewData();
+                EventBean[] newEvents = eventDataTouple.getValue0();
+
+                for(int i = 0; i < newEvents.length; i++){
+                    String houseId = String.valueOf(newEvents[i].get("houseId"));
+                    Double load = (Double) newEvents[i].get("load");
+
+                    StringBuilder resultBuilder = new StringBuilder();
+                    resultBuilder.append(houseId)
+                            .append(",")
+                            .append(load);
+
+
+                    results.add(resultBuilder.toString());
+                }
+            }
+        }
+
+        esper.sendEvent(new CurrentTimeEvent(lastTimestamp + (1000 * 60 * 60 * 60)));
+
+        if(updateListener.hasNewData()){
+            Pair<EventBean[], EventBean[]> eventDataTouple = updateListener.getNewData();
+            EventBean[] newEvents = eventDataTouple.getValue0();
+
+            for(int i = 0; i < newEvents.length; i++){
+                String houseId = String.valueOf(newEvents[i].get("houseId"));;
+                Double load = (Double) newEvents[i].get("load");
+
+                StringBuilder resultBuilder = new StringBuilder();
+                resultBuilder.append(houseId)
+                        .append(",")
+                        .append(load);
+
+
+                results.add(resultBuilder.toString());
+            }
+        }
+
+        Assert.assertEquals(results.get(0), "0,10.833333333333334");
+        Assert.assertEquals(results.get(1), "2,20.0");
+        Assert.assertEquals(results.get(2), "0,9.666666666666666");
+    }
+
+
+    @Test
+    public void testDebsQ2House() throws IOException {
+        URL queryUrl = EsperFactory.class.getResource("/esper-queries/debs-q2-house.esper");
+        String query = Resources.toString(queryUrl, StandardCharsets.UTF_8);
+        query = query.replace("%HOURS%", "1");
+
+        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderDebs("test-debs-q2-house");
+        EPAdministrator cepAdm = eps.getEPAdministrator();
+        EPStatement cepStatement = cepAdm.createEPL(query);
+        EsperUpdateListener updateListener = new EsperUpdateListener();
+        cepStatement.addListener(updateListener);
+        EPRuntime esper = eps.getEPRuntime();
+
+        String csvPath = getClass().getClassLoader().getResource("debs-testdata/q2-1hour").getPath();
+        File csv = new File(csvPath);
+
+        final ArrayList<String> results = new ArrayList<>();
+
+        BufferedReader reader = new BufferedReader(new FileReader(csv));
+        String line = null;
+        long lastTimestamp = 0;
+        while((line = reader.readLine()) != null){
+            DebsDataEntry entry = new DebsDataEntry(line);
+            lastTimestamp = entry.getTimestamp();
+            esper.sendEvent(new CurrentTimeEvent(entry.getTimestamp()));
+            esper.sendEvent(entry.getMap(), entry.getType().name());
+
+            if(updateListener.hasNewData()){
+                Pair<EventBean[], EventBean[]> eventDataTouple = updateListener.getNewData();
+                EventBean[] newEvents = eventDataTouple.getValue0();
+
+                for(int i = 0; i < newEvents.length; i++){
+                    String houseId = String.valueOf(newEvents[i].get("house"));
+                    Double med = (Double) newEvents[i].get("med");
+
+                    StringBuilder resultBuilder = new StringBuilder();
+                    resultBuilder.append(houseId)
+                            .append(",")
+                            .append(med);
+
+
+                    results.add(resultBuilder.toString());
+                }
+            }
+        }
+
+        esper.sendEvent(new CurrentTimeEvent(lastTimestamp + (1000 * 60 * 60 * 60)));
+
+        if(updateListener.hasNewData()){
+            Pair<EventBean[], EventBean[]> eventDataTouple = updateListener.getNewData();
+            EventBean[] newEvents = eventDataTouple.getValue0();
+
+            for(int i = 0; i < newEvents.length; i++){
+                String houseId = String.valueOf(newEvents[i].get("house"));
+                Double med = (Double) newEvents[i].get("med");
+
+                StringBuilder resultBuilder = new StringBuilder();
+                resultBuilder.append(houseId)
+                        .append(",")
+                        .append(med);
+
+
+                results.add(resultBuilder.toString());
+            }
+        }
+
+        Assert.assertEquals(results.get(0), "0,12.5");
+        Assert.assertEquals(results.get(1), "1,1.5");
+        Assert.assertEquals(results.get(2), "0,11.0");
+    }
+
+
+    @Test
+    public void testDebsQ2Plug() throws IOException {
+        URL queryUrl = EsperFactory.class.getResource("/esper-queries/debs-q2-plug.esper");
+        String query = Resources.toString(queryUrl, StandardCharsets.UTF_8);
+        query = query.replace("%HOURS%", "1");
+
+        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderDebs("test-debs-q2-house");
+        EPAdministrator cepAdm = eps.getEPAdministrator();
+        EPStatement cepStatement = cepAdm.createEPL(query);
+        EsperUpdateListener updateListener = new EsperUpdateListener();
+        cepStatement.addListener(updateListener);
+        EPRuntime esper = eps.getEPRuntime();
+
+        String csvPath = getClass().getClassLoader().getResource("debs-testdata/q2-1hour").getPath();
+        File csv = new File(csvPath);
+
+        final ArrayList<String> results = new ArrayList<>();
+
+        BufferedReader reader = new BufferedReader(new FileReader(csv));
+        String line = null;
+        long lastTimestamp = 0;
+        while((line = reader.readLine()) != null){
+            DebsDataEntry entry = new DebsDataEntry(line);
+            lastTimestamp = entry.getTimestamp();
+            esper.sendEvent(new CurrentTimeEvent(entry.getTimestamp()));
+            esper.sendEvent(entry.getMap(), entry.getType().name());
+
+            if(updateListener.hasNewData()){
+                Pair<EventBean[], EventBean[]> eventDataTouple = updateListener.getNewData();
+                EventBean[] newEvents = eventDataTouple.getValue0();
+
+                for(int i = 0; i < newEvents.length; i++){
+                    String houseId = String.valueOf(newEvents[i].get("house"));
+                    String plugId = String.valueOf(newEvents[i].get("plugId"));
+                    String household = String.valueOf(newEvents[i].get("household"));
+                    Double med = (Double) newEvents[i].get("med");
+
+                    StringBuilder resultBuilder = new StringBuilder();
+                    resultBuilder.append(houseId)
+                            .append(",")
+                            .append(household)
+                            .append(",")
+                            .append(plugId)
+                            .append(",")
+                            .append(med);
+
+
+                    results.add(resultBuilder.toString());
+                }
+            }
+        }
+
+        esper.sendEvent(new CurrentTimeEvent(lastTimestamp + (1000 * 60 * 60 * 60)));
+
+        if(updateListener.hasNewData()){
+            Pair<EventBean[], EventBean[]> eventDataTouple = updateListener.getNewData();
+            EventBean[] newEvents = eventDataTouple.getValue0();
+
+            for(int i = 0; i < newEvents.length; i++){
+                String houseId = String.valueOf(newEvents[i].get("house"));
+                String plugId = String.valueOf(newEvents[i].get("plugId"));
+                String household = String.valueOf(newEvents[i].get("household"));
+                Double med = (Double) newEvents[i].get("med");
+
+                StringBuilder resultBuilder = new StringBuilder();
+                resultBuilder.append(houseId)
+                        .append(",")
+                        .append(household)
+                        .append(",")
+                        .append(plugId)
+                        .append(",")
+                        .append(med);
+
+
+                results.add(resultBuilder.toString());
+            }
+        }
+
+        Assert.assertEquals(results.get(0), "1,0,2,2.0");
+        Assert.assertEquals(results.get(1), "1,0,1,1.0");
+        Assert.assertEquals(results.get(2), "0,1,20,20.0");
+        Assert.assertEquals(results.get(3), "0,0,11,11.0");
+        Assert.assertEquals(results.get(4), "0,0,12,12.0");
+        Assert.assertEquals(results.get(5), "0,0,13,13.0");
     }
 }

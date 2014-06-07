@@ -1,0 +1,3 @@
+SELECT houseId, avg(value) as load
+FROM Load.win:time_batch(%MINUTES% minutes)
+GROUP BY houseId
