@@ -1,15 +1,12 @@
 package ch.uzh.ddis.thesis.lambda_architecture.utils.kafkaconsumer;
 
-import kafka.consumer.Consumer;
+import ch.uzh.ddis.thesis.lambda_architecture.data.serde.MapSerde;
 import kafka.consumer.ConsumerConfig;
 import kafka.consumer.ConsumerIterator;
 import kafka.consumer.KafkaStream;
 import kafka.javaapi.consumer.ConsumerConnector;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -19,7 +16,8 @@ public class ConsumerGroupExample {
     private  ExecutorService executor;
 
     public ConsumerGroupExample(String a_zookeeper, String a_groupId, String a_topic) {
-        consumer = Consumer.createJavaConsumerConnector(createConsumerConfig(a_zookeeper, a_groupId));
+        consumer = kafka.consumer.Consumer.createJavaConsumerConnector(
+                createConsumerConfig(a_zookeeper, a_groupId));
         this.topic = a_topic;
     }
 
@@ -29,7 +27,7 @@ public class ConsumerGroupExample {
     }
 
     public void run(int a_numThreads) {
-        Map<String, Integer> topicCountMap = new HashMap<>();
+        Map<String, Integer> topicCountMap = new HashMap<String, Integer>();
         topicCountMap.put(topic, new Integer(a_numThreads));
         Map<String, List<KafkaStream<byte[], byte[]>>> consumerMap = consumer.createMessageStreams(topicCountMap);
         List<KafkaStream<byte[], byte[]>> streams = consumerMap.get(topic);
@@ -61,15 +59,15 @@ public class ConsumerGroupExample {
 
     public static void main(String[] args) {
         String zooKeeper = "localhost:2181";
-        String groupId = "kafka_test_2";
-        String topic = "srbench";
+        String groupId = UUID.randomUUID().toString();
+        String topic = "srbench-q1-results";
         int threads = 20;
 
         ConsumerGroupExample example = new ConsumerGroupExample(zooKeeper, groupId, topic);
         example.run(threads);
 
         try {
-            Thread.sleep(1000000);
+            Thread.sleep(10000);
         } catch (InterruptedException ie) {
 
         }
@@ -77,8 +75,7 @@ public class ConsumerGroupExample {
     }
 
 
-
-    private class ConsumerTest implements Runnable {
+    public class ConsumerTest implements Runnable {
         private KafkaStream m_stream;
         private int m_threadNumber;
 
@@ -88,11 +85,20 @@ public class ConsumerGroupExample {
         }
 
         public void run() {
-            System.out.println("running consumer test");
+            System.out.println("starting task");
             ConsumerIterator<byte[], byte[]> it = m_stream.iterator();
-            System.out.println("it size: " + it.size());
-            while (it.hasNext())
-                System.out.println("Thread " + m_threadNumber + ": " + new String(it.next().message()));
+            System.out.println("received iterator");
+            MapSerde serde = new MapSerde();
+            int counter = 0;
+            while (it.hasNext()){
+                Map<String, Object> entry = serde.fromBytes(it.next().message());
+                StringBuilder mapBuilder = new StringBuilder();
+                for(String key : entry.keySet()) {
+                    mapBuilder.append(key).append("=").append(String.valueOf(entry.get(key))).append(",");
+                }
+                System.out.println("Thread " + m_threadNumber + ": " + mapBuilder.toString());
+            }
+
             System.out.println("Shutting down Thread: " + m_threadNumber);
         }
     }

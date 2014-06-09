@@ -9,12 +9,14 @@ import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperUpdateListener;
 import com.ecyrd.speed4j.StopWatch;
 import com.espertech.esper.client.*;
 import com.espertech.esper.client.time.CurrentTimeEvent;
+import com.google.common.base.Optional;
 import com.google.common.io.Resources;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.apache.samza.config.Config;
+import org.apache.samza.storage.kv.KeyValueStore;
 import org.apache.samza.system.IncomingMessageEnvelope;
 import org.apache.samza.system.OutgoingMessageEnvelope;
 import org.apache.samza.system.SystemStream;
@@ -25,6 +27,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.UUID;
 
 /**
  * Stream Task to answer SRBench Question 1 using esper engine:
@@ -37,13 +40,20 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
 
+    private static final long shutdownWaitThreshold = (1000 * 60 * 5); // 5 minutes
+    private final String uuid = UUID.randomUUID().toString();
+
     private static final String esperEngineName = "srbench-q1";
     private static final String esperQueryPath = "/esper-queries/srbench-q1.esper";
-    private static final long shutdownWaitThreshold = (1000 * 60 * 5); // 5 minutes
 
     private static final SystemStream resultStream = new SystemStream("kafka", "srbench-q1-results");
-    private static final String outputKeySerde = "org.apache.samza.serializers.StringSerdeFactory";
-    private static final String outputMsgSerde = "ch.uzh.ddis.thesis.lambda_architecture.data.serde.MapSerdeFactory";
+    private static final String outputKeySerde = "string";
+    private static final String outputMsgSerde = "map";
+
+    private static final String firstTimestampStoreName = "timewindow";
+    private static final String firstTimestampKey = "firstTimeStamp";
+    private KeyValueStore<String, Long> firstTimestampStore;
+    private boolean firstTimestampSaved = false;
 
     private EPRuntime esper;
     private TimeWindow<IDataEntry> timeWindow;
@@ -61,39 +71,50 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
         this.timeWindow = new TumblingWindow<>(windowSize);
         this.initEsper();
 
+        this.firstTimestampStore = (KeyValueStore<String, Long>) taskContext.getStore(firstTimestampStoreName);
+        this.restoreTimeWindow();
+
         this.processWatch = new StopWatch();
     }
 
     @Override
     public void process(IncomingMessageEnvelope incomingMessageEnvelope, MessageCollector messageCollector, TaskCoordinator taskCoordinator) {
-
         SRBenchDataEntry entry = (SRBenchDataEntry) incomingMessageEnvelope.getMessage();
 
+        if(!firstTimestampSaved){
+            this.firstTimestampStore.put(firstTimestampKey, entry.getTimestamp());
+            firstTimestampSaved = true;
+        }
+
         this.sendTimeEvent(entry.getTimestamp());
-        this.esper.sendEvent(entry);
+        this.esper.sendEvent(entry.getMap(), entry.getMeasurement());
 
         if(!this.timeWindow.isInWindow(entry)) {
-            logger.info(remoteDebug, "topic=samzaProcessData newdata={} windowEnd={} currentEvent={}",
-                    this.esperUpdateListener.hasNewData(), this.timeWindow.getWindowEnd(), entry.getTimestamp());
             this.processNewData(messageCollector);
 
             taskCoordinator.commit();
         }
 
         this.timeWindow.addEvent(entry);
-        logger.info(remoteDebug, "topic=samzaTimeWindow start={} end={} currentData={}", timeWindow.getWindowStart(), timeWindow.getWindowEnd(), entry.getTimestamp());
-
-        if(this.processCounter == 0 || this.processCounter % 1000 == 0){
-            this.processWatch.stop();
-            logger.info(performance, "topic={} stepSize={} duration={} timestamp={} datatimestamp={}",
-                    "samzaProcessStep", "1000", this.processWatch.getTimeMicros(), System.currentTimeMillis(),
-                    entry.getTimestamp());
-            this.processWatch = new StopWatch();
-        }
-
-        logger.info(remoteDebug, "topic=samzaTimeOrder partition={} counter={} timeData={} windowStart={} windowEnd={}", incomingMessageEnvelope.getSystemStreamPartition().getPartition().getPartitionId(), processCounter, entry.getTimestamp(),timeWindow.getWindowStart(), timeWindow.getWindowEnd());
 
         this.processCounter++;
+        if(this.processCounter % 1000 == 0){
+            this.processWatch.stop();
+            logger.info(performance, "topic={} stepSize={} duration={} timestamp={} datatimestamp={} threadId={}",
+                    "samzaMessageThroughput", "1000", this.processWatch.getTimeMicros(), System.currentTimeMillis(),
+                    entry.getTimestamp(), this.uuid);
+            this.processWatch = new StopWatch();
+        }
+    }
+
+    private void restoreTimeWindow(){
+        Optional<Long> optionalTimeWindowStart = Optional.fromNullable(this.firstTimestampStore.get(firstTimestampKey));
+        if(optionalTimeWindowStart.isPresent()){
+            this.sendTimeEvent(optionalTimeWindowStart.get());
+            this.firstTimestampSaved = true;
+
+            logger.info(remoteDebug, "topic=samzaFirstTimestampRestore restored={} uuid={}", optionalTimeWindowStart.get());
+        }
     }
 
     private void sendTimeEvent(long timestamp){
@@ -103,8 +124,6 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
 
             this.lastTimestamp = timestamp;
             this.lastDataReceived = System.currentTimeMillis();
-
-            logger.info(remoteDebug, "topic=samzaSendTimeEvent currTime={} lastTime={}", timestamp, lastDataReceived);
         }
     }
 
@@ -113,14 +132,9 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
     public void window(MessageCollector messageCollector, TaskCoordinator taskCoordinator) throws Exception {
         long currentTime = System.currentTimeMillis();
 
-        logger.info(remoteDebug, "topic=samzaWindowCall called={} lastData={}", currentTime, this.lastDataReceived);
-
         if(lastDataReceived != 0 && (currentTime - lastDataReceived) > shutdownWaitThreshold){
             this.sendTimeEvent(Long.MAX_VALUE);
             this.processNewData(messageCollector);
-
-
-            logger.info(performance, "topic={} sysTime={} lastData={}", "samzaProcessShutdown", currentTime, this.lastDataReceived);
 
             taskCoordinator.shutdown(TaskCoordinator.ShutdownMethod.WAIT_FOR_ALL_TASKS);
         }
@@ -134,18 +148,18 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
 
             for(int i = 0; i < newEvents.length; i++){
                 String station = (String) newEvents[i].get("station");
-                String value = (String) newEvents[i].get("value");
+                String value = String.valueOf(newEvents[i].get("value"));
                 String unit = (String) newEvents[i].get("unit");
 
                 HashMap<String, Object> result = new HashMap<>(1);
                 result.put("station", station);
                 result.put("value", value);
                 result.put("unit", unit);
+                result.put("ts_start", timeWindow.getWindowStart());
+                result.put("ts_end", timeWindow.getWindowStart());
 
-                OutgoingMessageEnvelope resultMessage = new OutgoingMessageEnvelope(resultStream, outputKeySerde, outputMsgSerde, result);
+                OutgoingMessageEnvelope resultMessage = new OutgoingMessageEnvelope(resultStream, outputKeySerde, outputMsgSerde, "1", "1", result);
                 messageCollector.send(resultMessage);
-
-                logger.info(remoteDebug, "topic=samzaSendResult");
             }
         }
     }
@@ -163,7 +177,7 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
             System.exit(1);
         }
 
-        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench(esperEngineName);
+        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench(esperEngineName + "-" + uuid);
         EPAdministrator cepAdm = eps.getEPAdministrator();
         EPStatement cepStatement = cepAdm.createEPL(query);
         this.esperUpdateListener = new EsperUpdateListener();
