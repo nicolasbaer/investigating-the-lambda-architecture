@@ -27,6 +27,7 @@
         <module>batch</module>
         <module>coordination</module>
         <module>data</module>
+        <module>utils</module>
     </modules>
 
     <properties>

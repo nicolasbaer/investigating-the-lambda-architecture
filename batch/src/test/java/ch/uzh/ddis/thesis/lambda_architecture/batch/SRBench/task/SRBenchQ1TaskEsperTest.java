@@ -4,28 +4,51 @@ import ch.uzh.ddis.thesis.lambda_architecture.batch.cache.HashKV;
 import ch.uzh.ddis.thesis.lambda_architecture.data.serde.GenericData;
 import ch.uzh.ddis.thesis.lambda_architecture.data.serde.GenericSerde;
 import org.apache.samza.Partition;
-import org.apache.samza.config.MapConfig;
 import org.apache.samza.metrics.MetricsRegistry;
 import org.apache.samza.serializers.StringSerde;
 import org.apache.samza.storage.kv.KeyValueStore;
-import org.apache.samza.system.IncomingMessageEnvelope;
-import org.apache.samza.system.OutgoingMessageEnvelope;
-import org.apache.samza.system.SystemStreamPartition;
-import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.TaskContext;
 import org.apache.samza.task.TaskCoordinator;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 
 public class SRBenchQ1TaskEsperTest {
 
+
+    @Test
+    public void testWindow(){
+
+    }
+
+
+    @Test
+    public void testProcess(){
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /*
     @Test
     public void testProcessMessage() throws Exception {
 
@@ -71,7 +94,7 @@ public class SRBenchQ1TaskEsperTest {
 
 
     }
-
+*/
 
     private class TaskCoordinatorMock implements TaskCoordinator{
         @Override

@@ -13,6 +13,7 @@ import java.util.Map;
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public final class SRBenchDataEntry implements IDataEntry, Serializable{
+    private static final long serialVersionUID = 1L;
 
     private final long timestamp;
     private final String station;

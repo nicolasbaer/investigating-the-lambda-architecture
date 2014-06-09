@@ -12,7 +12,7 @@ public class EsperFactoryTest {
     @Test
     public void testMakeEsperServiceProviderSRBench() throws Exception {
 
-        EPServiceProvider cep = EsperFactory.makeEsperServiceProviderSRBench("test");
+        EPServiceProvider cep = EsperFactory.makeEsperServiceProviderSRBench("test-srbench-factory");
         EPAdministrator epAdm = cep.getEPAdministrator();
 
         Assert.assertNotNull(epAdm.getConfiguration().getEventType(SRBenchDataTypes.srBench));
@@ -53,7 +53,7 @@ public class EsperFactoryTest {
     @Test
     public void testMakeEsperServiceProviderDebs() throws Exception {
 
-        EPServiceProvider cep = EsperFactory.makeEsperServiceProviderDebs("test");
+        EPServiceProvider cep = EsperFactory.makeEsperServiceProviderDebs("test-debs-factory");
         EPAdministrator epAdm = cep.getEPAdministrator();
 
         Assert.assertNotNull(epAdm.getConfiguration().getEventType(DebsDataTypes.Debs));

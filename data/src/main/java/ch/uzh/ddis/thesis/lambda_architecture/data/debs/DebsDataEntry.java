@@ -10,6 +10,7 @@ import java.util.Map;
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class DebsDataEntry implements IDataEntry {
+    private static final long serialVersionUID = 1L;
 
     private final long rowId;
     private final long timestamp;

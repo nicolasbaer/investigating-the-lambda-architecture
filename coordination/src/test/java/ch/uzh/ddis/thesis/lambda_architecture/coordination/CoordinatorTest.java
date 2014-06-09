@@ -25,8 +25,6 @@ public class CoordinatorTest {
             fileNames.add(newFile.getName());
         }
 
-        String path = CoordinatorTest.class.getResource("/file_pattern_test").getPath();
-
         Coordinator coordinator = new Coordinator();
         coordinator.path = testDir.getPath();
 
