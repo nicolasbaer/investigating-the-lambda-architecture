@@ -57,6 +57,8 @@ public class CSVAdaptor<E extends IDataEntry> implements Runnable{
                             performanceCounter, watch.getTimeMicros(), csvName);
                     watch = new StopWatch(performanceTopicThroughput);
                 }
+
+                performanceCounter++;
             }
         } catch (IOException e){
             logger.error("could not read csv line with error message `{}`", e.getMessage());
