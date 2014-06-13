@@ -46,7 +46,7 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
     private static final String esperEngineName = "srbench-q1";
     private static final String esperQueryPath = "/esper-queries/srbench-q1.esper";
 
-    private static final SystemStream resultStream = new SystemStream("kafka", "srbench-q1-results");
+    private static final SystemStream resultStream = new SystemStream("kafka", "srbench-q1-result");
     private static final String outputKeySerde = "string";
     private static final String outputMsgSerde = "map";
 
@@ -156,7 +156,7 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
                 result.put("value", value);
                 result.put("unit", unit);
                 result.put("ts_start", timeWindow.getWindowStart());
-                result.put("ts_end", timeWindow.getWindowStart());
+                result.put("ts_end", timeWindow.getWindowEnd());
 
                 OutgoingMessageEnvelope resultMessage = new OutgoingMessageEnvelope(resultStream, outputKeySerde, outputMsgSerde, "1", "1", result);
                 messageCollector.send(resultMessage);
