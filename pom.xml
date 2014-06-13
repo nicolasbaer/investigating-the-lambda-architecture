@@ -31,7 +31,17 @@
     </modules>
 
     <properties>
-        <!-- core -->
+        <!-- runtime properties -->
+        <runtime.experiment.type>baseline</runtime.experiment.type>
+        <runtime.flume.host>localhost</runtime.flume.host>
+        <runtime.flume.port>4141</runtime.flume.port>
+        <runtime.kafka.zoo.host>localhost:2181/</runtime.kafka.zoo.host>
+        <runtime.kafka.broker.list>localhost:9092</runtime.kafka.broker.list>
+        <runtime.yarn.fs.defaultFS>hdfs://$host:8020</runtime.yarn.fs.defaultFS>
+        <runtime.mongodb.host>localhost</runtime.mongodb.host>
+        <runtime.mongodb.port>27017</runtime.mongodb.port>
+
+        <!-- dependency versions -->
         <kafka-version>0.8.1</kafka-version>
         <samza-version>0.7.0</samza-version>
         <storm-version>0.9.1-incubating</storm-version>
@@ -41,6 +51,7 @@
         <pig-version>0.12.1</pig-version>
         <hadoop-version>2.2.0</hadoop-version>
         <hadoop-core-version>1.2.1</hadoop-core-version>
+        <mongodb-version>2.12.2</mongodb-version>
 
 
         <!-- lang -->

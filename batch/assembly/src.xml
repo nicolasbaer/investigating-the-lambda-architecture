@@ -46,6 +46,14 @@
         </fileSet>
     </fileSets>
 
+    <files>
+        <file>
+            <source>${basedir}/src/main/resources/log4j2.xml</source>
+            <filtered>true</filtered>
+        </file>
+    </files>
+
+
     <dependencySets>
         <!-- samza shell: necessary to submit samza job -->
         <dependencySet>

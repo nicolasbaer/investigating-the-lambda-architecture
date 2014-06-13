@@ -43,6 +43,7 @@
                 <include>*.xml</include>
             </includes>
             <directory>${basedir}/src/main/resources/</directory>
+            <filtered>true</filtered>
         </fileSet>
     </fileSets>
 

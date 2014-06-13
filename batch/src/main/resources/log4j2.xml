@@ -12,7 +12,7 @@
             <filters>
                 <MarkerFilter marker="PERFORMANCE" onMatch="ACCEPT" onMismatch="DENY"/>
             </filters>
-            <Agent host="127.0.0.1" port="4141"/>
+            <Agent host="${runtime.flume.host}" port="${runtime.flume.port}"/>
             <PatternLayout pattern="@timestamp=%d{UNIX_MILLIS} class=%c{1} %msg"/>
         </Flume>
 
@@ -20,7 +20,7 @@
             <filters>
                 <MarkerFilter marker="DEBUGFLUME" onMatch="ACCEPT" onMismatch="DENY"/>
             </filters>
-            <Agent host="127.0.0.1" port="4141"/>
+            <Agent host="${runtime.flume.host}" port="${runtime.flume.port}"/>
             <PatternLayout pattern="@timestamp=%d{UNIX_MILLIS} class=%c{1} %msg"/>
         </Flume>
 
