@@ -2,8 +2,9 @@ package ch.uzh.ddis.thesis.lambda_architecture.batch.SRBench.task;
 
 import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.TimeWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.TumblingWindow;
-import ch.uzh.ddis.thesis.lambda_architecture.data.IDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.SRBench.SRBenchDataEntry;
+import ch.uzh.ddis.thesis.lambda_architecture.data.SimpleTimestamp;
+import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;
 import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperFactory;
 import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperUpdateListener;
 import com.ecyrd.speed4j.StopWatch;
@@ -31,7 +32,6 @@ import java.util.UUID;
 
 /**
  * Stream Task to answer SRBench Question 1 using esper engine:
- * `Get the rainfall observed once in an hour`
  *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
@@ -45,6 +45,7 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
 
     private static final String esperEngineName = "srbench-q1";
     private static final String esperQueryPath = "/esper-queries/srbench-q1.esper";
+    private static final long windowSize = 60l * 60l * 1000l; // 1 hour
 
     private static final SystemStream resultStream = new SystemStream("kafka", "srbench-q1-result");
     private static final String outputKeySerde = "string";
@@ -56,7 +57,7 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
     private boolean firstTimestampSaved = false;
 
     private EPRuntime esper;
-    private TimeWindow<IDataEntry> timeWindow;
+    private TimeWindow<Timestamped> timeWindow;
     private EsperUpdateListener esperUpdateListener;
     private String query;
 
@@ -67,7 +68,6 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
 
     @Override
     public void init(Config config, TaskContext taskContext) throws Exception {
-        long windowSize = 60l * 60l * 1000l;
         this.timeWindow = new TumblingWindow<>(windowSize);
         this.initEsper();
 
@@ -110,8 +110,10 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
     private void restoreTimeWindow(){
         Optional<Long> optionalTimeWindowStart = Optional.fromNullable(this.firstTimestampStore.get(firstTimestampKey));
         if(optionalTimeWindowStart.isPresent()){
-            this.sendTimeEvent(optionalTimeWindowStart.get());
+            long timestamp = optionalTimeWindowStart.get();
+            this.sendTimeEvent(timestamp);
             this.firstTimestampSaved = true;
+            this.timeWindow.addEvent(new SimpleTimestamp(timestamp));
 
             logger.info(remoteDebug, "topic=samzaFirstTimestampRestore restored={} uuid={}", optionalTimeWindowStart.get());
         }
