@@ -1,0 +1,48 @@
+<Configuration>
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT" ignoreExceptions="true">
+            <filters>
+                <MarkerFilter marker="PERFORMANCE" onMatch="DENY" onMismatch="ACCEPT"/>
+                <MarkerFilter marker="DEBUGFLUME" onMatch="DENY" onMismatch="ACCEPT"/>
+            </filters>
+            <PatternLayout pattern="%highlight{%d{ABSOLUTE} %c{3} %-5level: %msg%n%throwable}"/>
+        </Console>
+
+        <Flume name="performance-flume" compress="false">
+            <filters>
+                <MarkerFilter marker="PERFORMANCE" onMatch="ACCEPT" onMismatch="DENY"/>
+            </filters>
+            <Agent host="${runtime.flume.host}" port="${runtime.flume.port}"/>
+            <PatternLayout pattern="@timestamp=%d{UNIX_MILLIS} class=%c{1} %msg"/>
+        </Flume>
+
+        <Flume name="debug-flume" compress="false">
+            <filters>
+                <MarkerFilter marker="DEBUGFLUME" onMatch="ACCEPT" onMismatch="DENY"/>
+            </filters>
+            <Agent host="${runtime.flume.host}" port="${runtime.flume.port}"/>
+            <PatternLayout pattern="@timestamp=%d{UNIX_MILLIS} class=%c{1} %msg"/>
+        </Flume>
+
+        <Async name="debug-flume-async">
+            <AppenderRef ref="debug-flume"/>
+        </Async>
+        <Async name="performance-flume-async">
+            <AppenderRef ref="performance-flume"/>
+        </Async>
+    </Appenders>
+
+    <Loggers>
+        <Logger name="ch.uzh.ddis.thesis.lambda_architecture" level="INFO" additivity="false">
+            <AppenderRef ref="performance-flume-async"/>
+            <AppenderRef ref="debug-flume-async"/>
+            <AppenderRef ref="console"/>
+        </Logger>
+
+        <!-- general console output -->
+        <Root level="WARN">
+            <AppenderRef ref="console"/>
+        </Root>
+    </Loggers>
+
+</Configuration>
