@@ -25,10 +25,13 @@ DOWNLOAD_KAFKA=http://mirrors.sonic.net/apache/kafka/0.8.0/kafka_2.8.0-0.8.0.tar
 DOWNLOAD_YARN=http://mirrors.sonic.net/apache/hadoop/common/hadoop-2.2.0/hadoop-2.2.0.tar.gz
 DOWNLOAD_ZOOKEEPER=http://archive.apache.org/dist/zookeeper/zookeeper-3.4.5/zookeeper-3.4.5.tar.gz
 DOWNLOAD_STORM=http://mirror.switch.ch/mirror/apache/dist/incubator/storm/apache-storm-0.9.1-incubating/apache-storm-0.9.1-incubating.tar.gz
+DOWNLOAD_CASSANDRA=http://mirror.switch.ch/mirror/apache/dist/cassandra/2.0.8/apache-cassandra-2.0.8-bin.tar.gz
 DOWNLOAD_FLUME=http://mirror.switch.ch/mirror/apache/dist/flume/1.4.0/apache-flume-1.4.0-bin.tar.gz
 DOWNLOAD_ELASTICSEARCH=https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.0.1.tar.gz
 DOWNLOAD_KIBANA=https://download.elasticsearch.org/kibana/kibana/kibana-3.0.0milestone5.tar.gz
 DOWNLOAD_JETTY=http://eclipse.mirror.kangaroot.net/jetty/stable-9/dist/jetty-distribution-9.1.3.v20140225.tar.gz
+# this is osx specific!!
+DOWNLOAD_MONGODB=http://fastdl.mongodb.org/linux/mongodb-osx-x86_64-2.6.1.tgz
 
 bootstrap() {
   echo "Bootstrapping the system..."
@@ -45,6 +48,8 @@ install_all() {
   $DIR/$SCRIPT install yarn
   $DIR/$SCRIPT install kafka
   $DIR/$SCRIPT install storm
+  $DIR/$SCRIPT install cassandra
+  $DIR/$SCRIPT install mongodb
   $DIR/$SCRIPT install logging
 }
 
@@ -77,6 +82,15 @@ install_samza() {
 install_storm() {
   install "apache-storm-0.9.1-incubating"
   cp $BASE_DIR/conf/storm.yaml $DEPLOY_ROOT_DIR/$SYSTEM/conf/storm.yaml
+}
+
+install_cassandra() {
+  install "apache-cassandra-2.0.8"
+  cp $BASE_DIR/conf/cassandra.yaml $DEPLOY_ROOT_DIR/$SYSTEM/conf/cassandra.yaml
+}
+
+install_mongodb() {
+  echo "Unfortunately you'll have to install mongodb yourself, since there's no direct download link"
 }
 
 install_logging(){
@@ -117,6 +131,7 @@ start_all() {
   $DIR/$SCRIPT start yarn
   $DIR/$SCRIPT start kafka
   $DIR/$SCRIPT start storm
+  $DIR/$SCRIPT start cassandra
   $DIR/$SCRIPT start logging
 }
 
@@ -177,6 +192,34 @@ start_storm() {
   fi
 }
 
+start_cassandra() {
+  if [ -f $DEPLOY_ROOT_DIR/$SYSTEM/bin/cassandra ]; then
+    cd $DEPLOY_ROOT_DIR/$SYSTEM
+    mkdir -p logs
+    nohup bin/cassandra > logs/cassandra.log 2>&1 &
+    echo "Cassandra started..."
+    cd - > /dev/null
+  else
+    echo 'Cassandra is not installed. Run: bin/$SCRIPT install cassandra'
+  fi
+}
+
+start_mongodb() {
+  if [ -f $DEPLOY_ROOT_DIR/$SYSTEM/bin/mongod ]; then
+    cd $DEPLOY_ROOT_DIR/$SYSTEM
+    mkdir -p /tmp/mongodb-data
+    mkdir -p logs
+    mkdir -p pids
+    nohup bin/mongod --dbpath /tmp/mongodb-data > logs/mongod.log 2>&1 &
+    MONGO_PID=$!
+    echo $MONGO_PID > pids/mongodb.pid
+    echo "MongoDB started..."
+    cd - > /dev/null
+  else
+    echo 'MongoDB is not installed. Run: bin/$SCRIPT install mongodb'
+  fi
+}
+
 start_logging() {
   if [ -f $DEPLOY_ROOT_DIR/elasticsearch/bin/elasticsearch ]; then
     cd $DEPLOY_ROOT_DIR/elasticsearch
@@ -221,6 +264,7 @@ stop_all() {
   $DIR/$SCRIPT stop yarn
   $DIR/$SCRIPT stop zookeeper
   $DIR/$SCRIPT stop storm
+  $DIR/$SCRIPT stop cassandra
   $DIR/$SCRIPT stop logging
 }
 
@@ -274,6 +318,28 @@ stop_storm() {
     cd - > /dev/null
   else
     echo 'Storm is not installed. Run: bin/$SCRIPT install storm'
+  fi
+}
+
+stop_mongodb() {
+  if [ -f $DEPLOY_ROOT_DIR/$SYSTEM/bin/mongod ]; then
+    cd $DEPLOY_ROOT_DIR/$SYSTEM
+    MONGOD_PID=`cat pids/mongodb.pid`
+    kill $MONGOD_PID
+    rm -rf pids/mongodb.pid
+    cd - > /dev/null
+  else
+    echo 'MongoDB is not installed. Run: bin/$SCRIPT install mongodb'
+  fi
+}
+
+stop_cassandra() {
+  if [ -f $DEPLOY_ROOT_DIR/$SYSTEM/bin/cassandra ]; then
+    cd $DEPLOY_ROOT_DIR/$SYSTEM
+    pkill -f CassandraDaemon
+    cd - > /dev/null
+  else
+    echo 'Cassandra is not installed. Run: bin/$SCRIPT install cassandra'
   fi
 }
 
