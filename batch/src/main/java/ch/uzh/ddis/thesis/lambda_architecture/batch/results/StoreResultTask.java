@@ -62,7 +62,7 @@ public class StoreResultTask implements InitableTask, WindowableTask, StreamTask
             return;
         long currentTime = System.currentTimeMillis();
         if((currentTime - this.lastResultReceived) >  shutdownWaitThreshold){
-            taskCoordinator.shutdown(TaskCoordinator.ShutdownMethod.WAIT_FOR_ALL_TASKS);
+            taskCoordinator.shutdown(TaskCoordinator.RequestScope.CURRENT_TASK);
         }
     }
 }

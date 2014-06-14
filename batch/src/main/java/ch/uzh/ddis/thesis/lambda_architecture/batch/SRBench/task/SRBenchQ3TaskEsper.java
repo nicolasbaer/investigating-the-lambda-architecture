@@ -1,7 +1,7 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.SRBench.task;
 
+import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.SlidingWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.TimeWindow;
-import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.TumblingWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.data.SRBench.SRBenchDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.SimpleTimestamp;
 import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;
@@ -35,7 +35,7 @@ import java.util.UUID;
  *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, WindowableTask {
+public final class SRBenchQ3TaskEsper implements StreamTask, InitableTask, WindowableTask {
     private static final Logger logger = LogManager.getLogger();
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
@@ -43,11 +43,12 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
     private static final long shutdownWaitThreshold = (1000 * 60 * 5); // 5 minutes
     private final String uuid = UUID.randomUUID().toString();
 
-    private static final String esperEngineName = "srbench-q1";
-    private static final String esperQueryPath = "/esper-queries/srbench-q1.esper";
-    private static final long windowSize = 60l * 60l * 1000l; // 1 hour
+    private static final String esperEngineName = "srbench-q3";
+    private static final String esperQueryPath = "/esper-queries/srbench-q3.esper";
+    private static final long windowSize = 60l * 60l * 1000l * 3; // 3 hours
+    private static final long windowStep = 10l * 1000l; // 10 minutes
 
-    private static final SystemStream resultStream = new SystemStream("kafka", "srbench-q1-result");
+    private static final SystemStream resultStream = new SystemStream("kafka", "srbench-q3-result");
     private static final String outputKeySerde = "string";
     private static final String outputMsgSerde = "map";
 
@@ -68,7 +69,7 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
 
     @Override
     public void init(Config config, TaskContext taskContext) throws Exception {
-        this.timeWindow = new TumblingWindow<>(windowSize);
+        this.timeWindow = new SlidingWindow<>(windowSize, windowStep);
         this.initEsper();
 
         this.firstTimestampStore = (KeyValueStore<String, Long>) taskContext.getStore(firstTimestampStoreName);
@@ -134,13 +135,9 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
     public void window(MessageCollector messageCollector, TaskCoordinator taskCoordinator) throws Exception {
         long currentTime = System.currentTimeMillis();
 
-        logger.info(performance, "topic=samzawindowcall currentTime={} lastTime={}", currentTime, lastDataReceived);
-
         if(lastDataReceived != 0 && (currentTime - lastDataReceived) > shutdownWaitThreshold){
             this.sendTimeEvent(Long.MAX_VALUE);
             this.processNewData(messageCollector);
-
-            logger.info(performance, "topic=samzashutdown uuid={} lastData={}", uuid, lastDataReceived);
 
             taskCoordinator.shutdown(TaskCoordinator.RequestScope.CURRENT_TASK);
         }
@@ -154,13 +151,9 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
 
             for(int i = 0; i < newEvents.length; i++){
                 String station = (String) newEvents[i].get("station");
-                String value = String.valueOf(newEvents[i].get("value"));
-                String unit = (String) newEvents[i].get("unit");
 
                 HashMap<String, Object> result = new HashMap<>(1);
                 result.put("station", station);
-                result.put("value", value);
-                result.put("unit", unit);
                 result.put("ts_start", timeWindow.getWindowStart());
                 result.put("ts_end", timeWindow.getWindowEnd());
 

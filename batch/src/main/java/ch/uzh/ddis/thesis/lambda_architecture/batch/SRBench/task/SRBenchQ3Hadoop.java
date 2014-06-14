@@ -62,7 +62,7 @@ public final class SRBenchQ3Hadoop implements StreamTask, InitableTask{
 
 
 
-            taskCoordinator.commit();
+            taskCoordinator.commit(TaskCoordinator.RequestScope.CURRENT_TASK);
         }
 
         this.timeWindow.addEvent(entry);

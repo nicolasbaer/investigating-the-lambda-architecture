@@ -35,7 +35,7 @@ import java.util.UUID;
  *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, WindowableTask {
+public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, WindowableTask {
     private static final Logger logger = LogManager.getLogger();
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
@@ -43,11 +43,11 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
     private static final long shutdownWaitThreshold = (1000 * 60 * 5); // 5 minutes
     private final String uuid = UUID.randomUUID().toString();
 
-    private static final String esperEngineName = "srbench-q1";
-    private static final String esperQueryPath = "/esper-queries/srbench-q1.esper";
+    private static final String esperEngineName = "srbench-q2";
+    private static final String esperQueryPath = "/esper-queries/srbench-q2.esper";
     private static final long windowSize = 60l * 60l * 1000l; // 1 hour
 
-    private static final SystemStream resultStream = new SystemStream("kafka", "srbench-q1-result");
+    private static final SystemStream resultStream = new SystemStream("kafka", "srbench-q2-result");
     private static final String outputKeySerde = "string";
     private static final String outputMsgSerde = "map";
 
@@ -134,13 +134,9 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
     public void window(MessageCollector messageCollector, TaskCoordinator taskCoordinator) throws Exception {
         long currentTime = System.currentTimeMillis();
 
-        logger.info(performance, "topic=samzawindowcall currentTime={} lastTime={}", currentTime, lastDataReceived);
-
         if(lastDataReceived != 0 && (currentTime - lastDataReceived) > shutdownWaitThreshold){
             this.sendTimeEvent(Long.MAX_VALUE);
             this.processNewData(messageCollector);
-
-            logger.info(performance, "topic=samzashutdown uuid={} lastData={}", uuid, lastDataReceived);
 
             taskCoordinator.shutdown(TaskCoordinator.RequestScope.CURRENT_TASK);
         }
