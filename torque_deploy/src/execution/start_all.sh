@@ -1,5 +1,6 @@
 #!/bin/bash
 
+cd ~/lambda/execution
 . ./global.sh
 
 cp $PBS_NODEFILE tmp/hosts

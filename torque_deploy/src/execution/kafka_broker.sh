@@ -12,7 +12,7 @@ kafka_node_number=$2
 # configuration file manipulation
 kafka_config=$LAMBDA_APP_HOME/config/server.properties
 
-kafka_port=$((9092 + $kafka_node_number))
+kafka_port=9092
 
 cp $lambda_home_conf/kafka.properties $kafka_config
 sed -ie "s,\$data_dir,$LAMBDA_APP_DATA," $kafka_config

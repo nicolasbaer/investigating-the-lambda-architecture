@@ -45,7 +45,8 @@ def qsub(resource_file, exec_path):
 
     sh.qsub(os.path.join(path, "submit_new.sh"),
             N="lambdathesis",
-            l="nodes=%s:ppn=%s:walltime=%s" % (nodes, max_cpus, walltime),
+            l="nodes=%s:ppn=%s" % (nodes, max_cpus),
+            l="walltime=%s" % walltime,
             j="oe",
             o="lambda-out",
             e="lambda-err",
