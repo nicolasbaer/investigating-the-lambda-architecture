@@ -7,5 +7,6 @@ gaining knowledge explicitly contained in the data, but also deriving implicit k
 
 SELECT station
 FROM RainfallObservation.win:time_batch(1 hour) AS r
+where instanceof(r.value, double, float)
 GROUP BY r.station
 HAVING r.value > 30

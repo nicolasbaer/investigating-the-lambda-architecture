@@ -1,5 +1,6 @@
 1049614200,KMMV,Visibility,9.0,centimeters,VisibilityObservation
 1049614200,NO1,Visibility,10.0,centimeters,VisibilityObservation
 1049614200,MTHN2,PrecipitationAccumulated,57.17,centimeters,RainfallObservation
+1049614200,MTHN2,PrecipitationAccumulated,true,centimeters,RainfallObservation
 1049614200,NO2,PrecipitationAccumulated,29,centimeters,RainfallObservation
 1049614200,PANT,SnowDepth,true,boolean,SnowfallObservation
