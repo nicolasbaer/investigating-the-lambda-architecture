@@ -1,6 +1,7 @@
 package ch.uzh.ddis.thesis.lambda_architecture.coordination.producer;
 
 import ch.uzh.ddis.thesis.lambda_architecture.data.IDataEntry;
+import com.ecyrd.speed4j.StopWatch;
 import com.google.common.base.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,6 +35,8 @@ public final class SystemTimeSynchronizer<E extends IDataEntry> implements Runna
     private final ArrayList<ArrayBlockingQueue<Pair<E, Integer>>> queues;
 
     private ArrayList<Boolean> removeQueue;
+    private long processCounter = 0;
+    private StopWatch processWatch;
 
     /**
      *
@@ -123,6 +126,10 @@ public final class SystemTimeSynchronizer<E extends IDataEntry> implements Runna
      *                   (e.g. 1000 would mean every millisecond goes one second in data to kafka.)
      */
     private void processQueues(long firstTimestamp, long systemTimeStart, long ticksPerMs){
+        if(processCounter == 0){
+            this.processWatch = new StopWatch();
+        }
+
         PriorityQueue<Pair<E, Integer>> toProcess = new PriorityQueue<>(this.queues.size(), new Comparator<Pair<E, Integer>>() {
             @Override
             public int compare(Pair<E, Integer> o1, Pair<E, Integer> o2) {
@@ -191,6 +198,13 @@ public final class SystemTimeSynchronizer<E extends IDataEntry> implements Runna
                 }catch (InterruptedException e){
                     logger.error("could not read next element from queue {}", e, queueId);
                 }
+            }
+
+            this.processCounter++;
+            if(this.processCounter % 1000 == 0){
+                this.processWatch.stop();
+                logger.info(performance, "topic=synchronizerThroughput stepSize=1000 duration={}", this.processWatch.getTimeMicros());
+                this.processWatch = new StopWatch();
             }
         }
     }
