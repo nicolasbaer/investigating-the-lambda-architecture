@@ -1,7 +1,7 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.SRBench.task;
 
+import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.SlidingWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.TimeWindow;
-import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.TumblingWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.data.SRBench.SRBenchDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.SimpleTimestamp;
 import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;
@@ -35,7 +35,7 @@ import java.util.UUID;
  *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, WindowableTask {
+public final class SRBenchQ4TaskEsper implements StreamTask, InitableTask, WindowableTask {
     private static final Logger logger = LogManager.getLogger();
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
@@ -43,11 +43,12 @@ public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, Windo
     private static final long shutdownWaitThreshold = (1000 * 60 * 5); // 5 minutes
     private final String uuid = UUID.randomUUID().toString();
 
-    private static final String esperEngineName = "srbench-q2";
-    private static final String esperQueryPath = "/esper-queries/srbench-q2.esper";
+    private static final String esperEngineName = "srbench-q4";
+    private static final String esperQueryPath = "/esper-queries/srbench-q4.esper";
     private static final long windowSize = 60l * 60l * 1000l; // 1 hour
+    private static final long stepSize = 10l * 1000l; // 10 minutes
 
-    private static final SystemStream resultStream = new SystemStream("kafka", "srbench-q2-result");
+    private static final SystemStream resultStream = new SystemStream("kafka", "srbench-q4-result");
     private static final String outputKeySerde = "string";
     private static final String outputMsgSerde = "map";
 
@@ -68,7 +69,7 @@ public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, Windo
 
     @Override
     public void init(Config config, TaskContext taskContext) throws Exception {
-        this.timeWindow = new TumblingWindow<>(windowSize);
+        this.timeWindow = new SlidingWindow<>(windowSize, stepSize);
         this.initEsper();
 
         this.firstTimestampStore = (KeyValueStore<String, Long>) taskContext.getStore(firstTimestampStoreName);
@@ -151,14 +152,14 @@ public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, Windo
             EventBean[] newEvents = eventDataTouple.getValue0();
 
             for(int i = 0; i < newEvents.length; i++){
-                String station = (String) newEvents[i].get("station");
-                String value = String.valueOf(newEvents[i].get("value"));
-                String unit = (String) newEvents[i].get("unit");
+                String station = (String) newEvents[i].get("stat");
+                Double speed = (Double) newEvents[i].get("speed");
+                Double temperature = (Double) newEvents[i].get("temperature");
 
                 HashMap<String, Object> result = new HashMap<>(1);
                 result.put("station", station);
-                result.put("value", value);
-                result.put("unit", unit);
+                result.put("speed", speed);
+                result.put("temperature", temperature);
                 result.put("ts_start", timeWindow.getWindowStart());
                 result.put("ts_end", timeWindow.getWindowEnd());
 

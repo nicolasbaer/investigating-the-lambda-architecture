@@ -139,6 +139,8 @@ public final class SRBenchQ3TaskEsper implements StreamTask, InitableTask, Windo
             this.sendTimeEvent(Long.MAX_VALUE);
             this.processNewData(messageCollector);
 
+            logger.info(performance, "topic=samzashutdown uuid={} lastData={}", uuid, lastDataReceived);
+
             taskCoordinator.shutdown(TaskCoordinator.RequestScope.CURRENT_TASK);
         }
     }

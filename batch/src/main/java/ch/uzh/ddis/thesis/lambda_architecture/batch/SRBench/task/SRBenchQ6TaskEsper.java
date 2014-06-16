@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -35,7 +37,7 @@ import java.util.UUID;
  *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, WindowableTask {
+public final class SRBenchQ6TaskEsper implements StreamTask, InitableTask, WindowableTask {
     private static final Logger logger = LogManager.getLogger();
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
@@ -43,11 +45,13 @@ public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, Windo
     private static final long shutdownWaitThreshold = (1000 * 60 * 5); // 5 minutes
     private final String uuid = UUID.randomUUID().toString();
 
-    private static final String esperEngineName = "srbench-q2";
-    private static final String esperQueryPath = "/esper-queries/srbench-q2.esper";
+    private static final String esperEngineName = "srbench-q4";
+    private static final String esperQueryPathRainfall = "/esper-queries/srbench-q6-rainfall.esper";
+    private static final String esperQueryPathSnowfall = "/esper-queries/srbench-q6-snowfall.esper";
+    private static final String esperQueryPathVisibility = "/esper-queries/srbench-q6-visibility.esper";
     private static final long windowSize = 60l * 60l * 1000l; // 1 hour
 
-    private static final SystemStream resultStream = new SystemStream("kafka", "srbench-q2-result");
+    private static final SystemStream resultStream = new SystemStream("kafka", "srbench-q6-result");
     private static final String outputKeySerde = "string";
     private static final String outputMsgSerde = "map";
 
@@ -58,8 +62,12 @@ public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, Windo
 
     private EPRuntime esper;
     private TimeWindow<Timestamped> timeWindow;
-    private EsperUpdateListener esperUpdateListener;
-    private String query;
+    private EsperUpdateListener esperUpdateListenerRainfall;
+    private EsperUpdateListener esperUpdateListenerSnowfall;
+    private EsperUpdateListener esperUpdateListenerVisibility;
+    private String queryRainfall;
+    private String querySnowfall;
+    private String queryVisibility;
 
     private long lastTimestamp = 0;
     private long lastDataReceived;
@@ -146,19 +154,42 @@ public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, Windo
 
 
     private void processNewData(MessageCollector messageCollector){
-        if(this.esperUpdateListener.hasNewData()){
-            Pair<EventBean[], EventBean[]> eventDataTouple = this.esperUpdateListener.getNewData();
+        Set<String> stations = new HashSet<>();
+
+        if(this.esperUpdateListenerRainfall.hasNewData()){
+            Pair<EventBean[], EventBean[]> eventDataTouple = this.esperUpdateListenerRainfall.getNewData();
             EventBean[] newEvents = eventDataTouple.getValue0();
 
             for(int i = 0; i < newEvents.length; i++){
                 String station = (String) newEvents[i].get("station");
-                String value = String.valueOf(newEvents[i].get("value"));
-                String unit = (String) newEvents[i].get("unit");
+                stations.add(station);
+            }
+        }
 
+        if(this.esperUpdateListenerSnowfall.hasNewData()){
+            Pair<EventBean[], EventBean[]> eventDataTouple = this.esperUpdateListenerSnowfall.getNewData();
+            EventBean[] newEvents = eventDataTouple.getValue0();
+
+            for(int i = 0; i < newEvents.length; i++){
+                String station = (String) newEvents[i].get("station");
+                stations.add(station);
+            }
+        }
+
+        if(this.esperUpdateListenerVisibility.hasNewData()){
+            Pair<EventBean[], EventBean[]> eventDataTouple = this.esperUpdateListenerVisibility.getNewData();
+            EventBean[] newEvents = eventDataTouple.getValue0();
+
+            for(int i = 0; i < newEvents.length; i++){
+                String station = (String) newEvents[i].get("station");
+                stations.add(station);
+            }
+        }
+
+        if(!stations.isEmpty()){
+            for(String station : stations){
                 HashMap<String, Object> result = new HashMap<>(1);
                 result.put("station", station);
-                result.put("value", value);
-                result.put("unit", unit);
                 result.put("ts_start", timeWindow.getWindowStart());
                 result.put("ts_end", timeWindow.getWindowEnd());
 
@@ -173,9 +204,13 @@ public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, Windo
      * Initializes the esper engine.
      */
     private void initEsper(){
-        URL queryPath = EsperFactory.class.getResource(esperQueryPath);
+        URL queryPathRainfall = EsperFactory.class.getResource(esperQueryPathRainfall);
+        URL queryPathSnowfall = EsperFactory.class.getResource(esperQueryPathSnowfall);
+        URL queryPathVisibility = EsperFactory.class.getResource(esperQueryPathVisibility);
         try {
-            this.query = Resources.toString(queryPath, StandardCharsets.UTF_8);
+            this.queryRainfall = Resources.toString(queryPathRainfall, StandardCharsets.UTF_8);
+            this.querySnowfall = Resources.toString(queryPathSnowfall, StandardCharsets.UTF_8);
+            this.queryVisibility = Resources.toString(queryPathVisibility, StandardCharsets.UTF_8);
         } catch (IOException e){
             logger.error(e);
             System.exit(1);
@@ -183,9 +218,15 @@ public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, Windo
 
         EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench(esperEngineName + "-" + uuid);
         EPAdministrator cepAdm = eps.getEPAdministrator();
-        EPStatement cepStatement = cepAdm.createEPL(query);
-        this.esperUpdateListener = new EsperUpdateListener();
-        cepStatement.addListener(this.esperUpdateListener);
+        EPStatement cepStatementRainfall = cepAdm.createEPL(queryRainfall);
+        EPStatement cepStatementVisibility = cepAdm.createEPL(queryVisibility);
+        EPStatement cepStatementSnowfall = cepAdm.createEPL(querySnowfall);
+        this.esperUpdateListenerRainfall = new EsperUpdateListener();
+        this.esperUpdateListenerVisibility = new EsperUpdateListener();
+        this.esperUpdateListenerSnowfall = new EsperUpdateListener();
+        cepStatementRainfall.addListener(this.esperUpdateListenerRainfall);
+        cepStatementSnowfall.addListener(this.esperUpdateListenerSnowfall);
+        cepStatementVisibility.addListener(this.esperUpdateListenerVisibility);
         this.esper = eps.getEPRuntime();
     }
 }
