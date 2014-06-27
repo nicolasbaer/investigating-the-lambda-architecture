@@ -30,6 +30,7 @@ DOWNLOAD_FLUME=http://mirror.switch.ch/mirror/apache/dist/flume/1.4.0/apache-flu
 DOWNLOAD_ELASTICSEARCH=https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.0.1.tar.gz
 DOWNLOAD_KIBANA=https://download.elasticsearch.org/kibana/kibana/kibana-3.0.0milestone5.tar.gz
 DOWNLOAD_JETTY=http://eclipse.mirror.kangaroot.net/jetty/stable-9/dist/jetty-distribution-9.1.3.v20140225.tar.gz
+DOWNLOAD_REDIS=http://download.redis.io/releases/redis-2.8.12.tar.gz
 # this is osx specific!!
 DOWNLOAD_MONGODB=http://fastdl.mongodb.org/linux/mongodb-osx-x86_64-2.6.1.tgz
 
@@ -50,6 +51,7 @@ install_all() {
   $DIR/$SCRIPT install storm
   $DIR/$SCRIPT install cassandra
   $DIR/$SCRIPT install mongodb
+  $DIR/$SCRIPT install redis
   $DIR/$SCRIPT install logging
 }
 
@@ -87,6 +89,13 @@ install_storm() {
 install_cassandra() {
   install "apache-cassandra-2.0.8"
   cp $BASE_DIR/conf/cassandra.yaml $DEPLOY_ROOT_DIR/$SYSTEM/conf/cassandra.yaml
+}
+
+install_redis() {
+  install "redis-2.8.12"
+  cd $DEPLOY_ROOT_DIR/$SYSTEM
+  make
+  cd - > /dev/null
 }
 
 install_mongodb() {
@@ -132,6 +141,8 @@ start_all() {
   $DIR/$SCRIPT start kafka
   $DIR/$SCRIPT start storm
   $DIR/$SCRIPT start cassandra
+  $DIR/$SCRIPT start redis
+  $DIR/$SCRIPT start mongodb
   $DIR/$SCRIPT start logging
 }
 
@@ -220,6 +231,21 @@ start_mongodb() {
   fi
 }
 
+start_redis() {
+  if [ -f $DEPLOY_ROOT_DIR/$SYSTEM/src/redis-server ]; then
+    cd $DEPLOY_ROOT_DIR/$SYSTEM
+    mkdir -p logs
+    mkdir -p pids
+    nohup src/redis-server > logs/redis.log 2>&1 &
+    REDIS_PID=$!
+    echo $REDIS_PID > pids/redis.pid
+    echo "Redis started..."
+    cd - > /dev/null
+  else
+    echo 'Redis is not installed. Run: bin/$SCRIPT install redis'
+  fi
+}
+
 start_logging() {
   if [ -f $DEPLOY_ROOT_DIR/elasticsearch/bin/elasticsearch ]; then
     cd $DEPLOY_ROOT_DIR/elasticsearch
@@ -265,6 +291,8 @@ stop_all() {
   $DIR/$SCRIPT stop zookeeper
   $DIR/$SCRIPT stop storm
   $DIR/$SCRIPT stop cassandra
+  $DIR/$SCRIPT stop mongodb
+  $DIR/$SCRIPT stop redis
   $DIR/$SCRIPT stop logging
 }
 
@@ -330,6 +358,18 @@ stop_mongodb() {
     cd - > /dev/null
   else
     echo 'MongoDB is not installed. Run: bin/$SCRIPT install mongodb'
+  fi
+}
+
+stop_redis() {
+  if [ -f $DEPLOY_ROOT_DIR/$SYSTEM/src/redis-server ]; then
+    cd $DEPLOY_ROOT_DIR/$SYSTEM
+    REDIS_PID=`cat pids/redis.pid`
+    kill $REDIS_PID
+    rm -rf pids/redis.pid
+    cd - > /dev/null
+  else
+    echo 'Redis is not installed. Run: bin/$SCRIPT install redis'
   fi
 }
 
