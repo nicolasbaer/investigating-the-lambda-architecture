@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Coordinator {
 
-    @Parameter(names = "-kafka-properties", description = "path to kafka properties", required = true)
+    @Parameter(names = "-kafka-properties", description = "path to kafka properties")
     public String kafkaPropertiesPath;
 
     @Parameter(names = "-dataset", description = "srbench or debs", required = true)
@@ -122,7 +122,7 @@ public class Coordinator {
         Coordinator coordinator = new Coordinator();
         JCommander j = new JCommander(coordinator, args);
 
-        if(coordinator.kafkaPropertiesPath == null || coordinator.path == null || coordinator.dataset == null){
+        if(coordinator.path == null || coordinator.dataset == null){
             j.usage();
             System.exit(1);
         }

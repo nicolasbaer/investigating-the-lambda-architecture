@@ -26,7 +26,7 @@ public class NettyProducer extends ChannelInboundHandlerAdapter implements IProd
     private EventLoopGroup workerGroup;
     private ChannelFuture channelFuture;
 
-    private SimpleNettyHandler handler;
+    private NettyBuffer buffer;
 
 
     public NettyProducer(int port){
@@ -38,7 +38,7 @@ public class NettyProducer extends ChannelInboundHandlerAdapter implements IProd
         this.bossGroup = new NioEventLoopGroup();
         this.workerGroup = new NioEventLoopGroup();
 
-        this.handler = new SimpleNettyHandler();
+        this.buffer = new NettyBuffer();
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
@@ -47,7 +47,7 @@ public class NettyProducer extends ChannelInboundHandlerAdapter implements IProd
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline().addLast(new ReadTimeoutHandler(readTimeout));
-                            ch.pipeline().addLast(handler);
+                            ch.pipeline().addLast(new SimpleNettyHandler(buffer));
                             ch.pipeline().addLast("stringEncoder", new StringEncoder(CharsetUtil.UTF_8));
 
                         }
@@ -56,7 +56,8 @@ public class NettyProducer extends ChannelInboundHandlerAdapter implements IProd
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
 
             this.channelFuture = b.bind(this.port).sync();
-        }catch (InterruptedException e){
+
+        }catch (Exception e){
             logger.error(e);
         }
     }
@@ -74,7 +75,7 @@ public class NettyProducer extends ChannelInboundHandlerAdapter implements IProd
     @Override
     public void send(IDataEntry message){
         try {
-            this.handler.getQueue().put(message.toString());
+            this.buffer.getBuffer().put(message.toString());
         } catch (InterruptedException e){
             logger.error(e);
         }
@@ -82,7 +83,7 @@ public class NettyProducer extends ChannelInboundHandlerAdapter implements IProd
 
     public void send(String message){
         try {
-            this.handler.getQueue().put(message);
+            this.buffer.getBuffer().put(message);
         } catch (InterruptedException e){
             logger.error(e);
         }
@@ -90,7 +91,7 @@ public class NettyProducer extends ChannelInboundHandlerAdapter implements IProd
 
     @Override
     public void close() {
-        while(!this.handler.getQueue().isEmpty()){
+        while(!this.buffer.getBuffer().isEmpty()){
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {

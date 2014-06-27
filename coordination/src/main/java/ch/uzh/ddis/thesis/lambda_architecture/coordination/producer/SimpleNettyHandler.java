@@ -10,8 +10,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
-import java.util.concurrent.ArrayBlockingQueue;
-
 /**
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
@@ -22,13 +20,13 @@ public class SimpleNettyHandler extends ChannelInboundHandlerAdapter {
     private static final int max_buffer_size = 1000;
     private static final int max_batch_size = 250;
 
-    private final ArrayBlockingQueue<String> queue;
+    private final NettyBuffer buffer;
 
     private long processCounter = 0;
     private StopWatch stopWatch;
 
-    public SimpleNettyHandler(){
-        this.queue = new ArrayBlockingQueue<>(max_buffer_size);
+    public SimpleNettyHandler(NettyBuffer buffer){
+        this.buffer = buffer;
     }
 
     @Override
@@ -36,13 +34,15 @@ public class SimpleNettyHandler extends ChannelInboundHandlerAdapter {
         super.channelRead(ctx, msg);
         Channel channel = ctx.channel();
 
+        logger.debug("received request");
+
         if(this.stopWatch == null){
             this.stopWatch = new StopWatch();
         }
 
         StringBuffer messagePacket = new StringBuffer();
         for(int i = 0; i<max_batch_size; i++){
-            Optional<String> optionalData = Optional.fromNullable(queue.poll());
+            Optional<String> optionalData = Optional.fromNullable(buffer.getBuffer().poll());
             if(optionalData.isPresent()){
                 messagePacket.append(optionalData.get()).append("\n");
 
@@ -72,7 +72,10 @@ public class SimpleNettyHandler extends ChannelInboundHandlerAdapter {
         logger.debug("channel inactive");
     }
 
-    public ArrayBlockingQueue<String> getQueue() {
-        return queue;
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) { // (4)
+        cause.printStackTrace();
+        ctx.close();
     }
+
 }

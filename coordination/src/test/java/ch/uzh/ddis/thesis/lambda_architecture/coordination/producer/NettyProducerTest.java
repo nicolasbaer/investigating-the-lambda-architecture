@@ -55,7 +55,6 @@ public class NettyProducerTest {
 
             client.channel.writeAndFlush("1");
 
-
             f.channel().closeFuture().sync();
         } finally {
             workerGroup.shutdownGracefully();
@@ -100,4 +99,7 @@ public class NettyProducerTest {
             ctx.close();
         }
     }
+
+
 }
+
