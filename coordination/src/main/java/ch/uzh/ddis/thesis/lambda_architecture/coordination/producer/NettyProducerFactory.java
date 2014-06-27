@@ -1,7 +1,6 @@
 package ch.uzh.ddis.thesis.lambda_architecture.coordination.producer;
 
 import java.util.ArrayList;
-import java.util.concurrent.Executor;
 
 /**
  * @author Nicolas Baer <nicolas.baer@gmail.com>
@@ -9,14 +8,12 @@ import java.util.concurrent.Executor;
 public class NettyProducerFactory implements IProducerFactory{
 
     private final static Integer startPort = 5050;
-    private final Executor executor;
 
     private ArrayList<Integer> ports;
 
 
-    public NettyProducerFactory(Executor executor) {
+    public NettyProducerFactory() {
         this.ports = new ArrayList<>();
-        this.executor = executor;
     }
 
     @Override
@@ -32,7 +29,6 @@ public class NettyProducerFactory implements IProducerFactory{
 
         NettyProducer producer = new NettyProducer(port);
         producer.open();
-        executor.execute(producer);
 
         return producer;
     }

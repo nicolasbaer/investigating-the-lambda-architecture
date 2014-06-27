@@ -14,8 +14,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class NettyProducerTest {
     private static final Logger logger = LogManager.getLogger();
@@ -29,9 +27,6 @@ public class NettyProducerTest {
         for(int i = 0; i < 500; i++){
             producer.send(String.valueOf(i));
         }
-
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
-        executorService.execute(producer);
 
         final NettyClient client = new NettyClient();
 
@@ -65,8 +60,6 @@ public class NettyProducerTest {
         } finally {
             workerGroup.shutdownGracefully();
         }
-
-        executorService.shutdown();
 
         int counter = 0;
         for(String i : client.received){

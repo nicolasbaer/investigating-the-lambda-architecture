@@ -80,7 +80,7 @@ public class Coordinator {
 
             producerFactory = new KafkaProducerFactory(properties, this.topic);
         }else{
-            producerFactory = new NettyProducerFactory(executor);
+            producerFactory = new NettyProducerFactory();
         }
 
         Collection<File> files = this.getFilesFromPath();

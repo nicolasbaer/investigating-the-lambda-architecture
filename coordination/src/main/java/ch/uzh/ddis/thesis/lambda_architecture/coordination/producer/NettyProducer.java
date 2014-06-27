@@ -15,7 +15,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public class NettyProducer extends ChannelInboundHandlerAdapter implements IProducer, Runnable {
+public class NettyProducer extends ChannelInboundHandlerAdapter implements IProducer {
     private static final Logger logger = LogManager.getLogger();
 
     private static final int readTimeout = 5; // in seconds
@@ -61,12 +61,6 @@ public class NettyProducer extends ChannelInboundHandlerAdapter implements IProd
         }
     }
 
-    private void processMessages(){
-
-
-        this.closeSocket();
-    }
-
     private void closeSocket(){
         try {
             this.channelFuture.channel().closeFuture().sync();
@@ -105,10 +99,5 @@ public class NettyProducer extends ChannelInboundHandlerAdapter implements IProd
         }
 
         this.closeSocket();
-    }
-
-    @Override
-    public void run() {
-        this.processMessages();
     }
 }
