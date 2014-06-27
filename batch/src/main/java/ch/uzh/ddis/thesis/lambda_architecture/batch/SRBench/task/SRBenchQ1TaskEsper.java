@@ -47,7 +47,7 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
     private static final String esperQueryPath = "/esper-queries/srbench-q1.esper";
     private static final long windowSize = 60l * 60l * 1000l; // 1 hour
 
-    private static final SystemStream resultStream = new SystemStream("kafka", "srbench-q1-result");
+    private static SystemStream resultStream;
     private static final String outputKeySerde = "string";
     private static final String outputMsgSerde = "map";
 
@@ -68,6 +68,9 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
 
     @Override
     public void init(Config config, TaskContext taskContext) throws Exception {
+        String resultStreamName = config.get("custom.srbench.result.stream");
+        this.resultStream = new SystemStream("kafka", resultStreamName);
+
         this.timeWindow = new TumblingWindow<>(windowSize);
         this.initEsper();
 
@@ -79,7 +82,7 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
 
     @Override
     public void process(IncomingMessageEnvelope incomingMessageEnvelope, MessageCollector messageCollector, TaskCoordinator taskCoordinator) {
-        SRBenchDataEntry entry = (SRBenchDataEntry) incomingMessageEnvelope.getMessage();
+        SRBenchDataEntry entry = new SRBenchDataEntry((String) incomingMessageEnvelope.getMessage());
 
         if(!firstTimestampSaved){
             this.firstTimestampStore.put(firstTimestampKey, entry.getTimestamp());
@@ -163,6 +166,7 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
                 result.put("unit", unit);
                 result.put("ts_start", timeWindow.getWindowStart());
                 result.put("ts_end", timeWindow.getWindowEnd());
+                result.put("sys_time", System.currentTimeMillis());
 
                 OutgoingMessageEnvelope resultMessage = new OutgoingMessageEnvelope(resultStream, outputKeySerde, outputMsgSerde, "1", "1", result);
                 messageCollector.send(resultMessage);

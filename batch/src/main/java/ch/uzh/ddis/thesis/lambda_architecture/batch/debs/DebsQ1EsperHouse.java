@@ -1,4 +1,4 @@
-package ch.uzh.ddis.thesis.lambda_architecture.batch.SRBench.task;
+package ch.uzh.ddis.thesis.lambda_architecture.batch.debs;
 
 import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.TimeWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.TumblingWindow;
@@ -12,6 +12,7 @@ import com.espertech.esper.client.*;
 import com.espertech.esper.client.time.CurrentTimeEvent;
 import com.google.common.base.Optional;
 import com.google.common.io.Resources;
+import org.apache.commons.math3.stat.StatUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
@@ -35,17 +36,18 @@ import java.util.UUID;
  *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, WindowableTask {
+public final class DebsQ1EsperHouse implements StreamTask, InitableTask, WindowableTask {
     private static final Logger logger = LogManager.getLogger();
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
 
-    private static final long shutdownWaitThreshold = (1000 * 60 * 5); // 5 minutes
+    private static final long shutdownWaitThreshold = (1000 * 60 * 10); // 10 minutes
     private final String uuid = UUID.randomUUID().toString();
 
-    private static final String esperEngineName = "srbench-q2";
-    private static final String esperQueryPath = "/esper-queries/srbench-q2.esper";
-    private static final long windowSize = 60l * 60l * 1000l; // 1 hour
+    private static final String esperEngineName = "debs-q1-house";
+    private static final String esperQueryPath = "/esper-queries/debs-q1-house.esper";
+    private static final String debsWindowSizeConf = "custom.debs.window.size";
+    private long windowSize = 0;
 
     private static SystemStream resultStream;
     private static final String outputKeySerde = "string";
@@ -55,6 +57,9 @@ public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, Windo
     private static final String firstTimestampKey = "firstTimeStamp";
     private KeyValueStore<String, Long> firstTimestampStore;
     private boolean firstTimestampSaved = false;
+
+    private static final String historicalDataStoreName = "history";
+    private KeyValueStore<String, Double> historyStore;
 
     private EPRuntime esper;
     private TimeWindow<Timestamped> timeWindow;
@@ -68,8 +73,8 @@ public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, Windo
 
     @Override
     public void init(Config config, TaskContext taskContext) throws Exception {
-        String resultStreamName = config.get("custom.srbench.result.stream");
-        this.resultStream = new SystemStream("kafka", resultStreamName);
+        this.windowSize = Long.valueOf(config.get(debsWindowSizeConf));
+        this.resultStream = new SystemStream("kafka", "debs-q1-house-"+windowSize+"min-result");
 
         this.timeWindow = new TumblingWindow<>(windowSize);
         this.initEsper();
@@ -77,12 +82,14 @@ public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, Windo
         this.firstTimestampStore = (KeyValueStore<String, Long>) taskContext.getStore(firstTimestampStoreName);
         this.restoreTimeWindow();
 
+        this.historyStore = (KeyValueStore<String, Double>) taskContext.getStore(historicalDataStoreName);
+
         this.processWatch = new StopWatch();
     }
 
     @Override
     public void process(IncomingMessageEnvelope incomingMessageEnvelope, MessageCollector messageCollector, TaskCoordinator taskCoordinator) {
-        SRBenchDataEntry entry = new SRBenchDataEntry((String) incomingMessageEnvelope.getMessage());
+        SRBenchDataEntry entry = (SRBenchDataEntry) incomingMessageEnvelope.getMessage();
 
         if(!firstTimestampSaved){
             this.firstTimestampStore.put(firstTimestampKey, entry.getTimestamp());
@@ -137,6 +144,8 @@ public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, Windo
     public void window(MessageCollector messageCollector, TaskCoordinator taskCoordinator) throws Exception {
         long currentTime = System.currentTimeMillis();
 
+        logger.info(performance, "topic=samzawindowcall currentTime={} lastTime={}", currentTime, lastDataReceived);
+
         if(lastDataReceived != 0 && (currentTime - lastDataReceived) > shutdownWaitThreshold){
             this.sendTimeEvent(Long.MAX_VALUE);
             this.processNewData(messageCollector);
@@ -154,17 +163,43 @@ public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, Windo
             EventBean[] newEvents = eventDataTouple.getValue0();
 
             for(int i = 0; i < newEvents.length; i++){
-                String station = (String) newEvents[i].get("station");
-                String value = String.valueOf(newEvents[i].get("value"));
-                String unit = (String) newEvents[i].get("unit");
+                String houseId = String.valueOf(newEvents[i].get("houseId"));
+                Double load = (Double) newEvents[i].get("load");
+
+                // save into kv-store
+                String key = new StringBuilder().append(this.timeWindow.getWindowStart()).append(houseId).toString();
+                historyStore.put(key, load);
+
+                // retrieve historical values
+                long times[] = new long[3];
+                long nextPrediction = this.timeWindow.getWindowStart() + (this.windowSize * 2);
+                long oneDay = 24l * 60l * 60l * 1000l;
+                times[0] = (nextPrediction) - (oneDay * 3);
+                times[0] = (nextPrediction) - (oneDay * 2);
+                times[0] = (nextPrediction) - (oneDay * 1);
+
+                double values[] = new double[3];
+                for(int j = 0; j < times.length; j++){
+                    long t = times[j];
+                    try {
+                        String keyT = new StringBuilder().append(t).append(houseId).toString();
+                        Optional<Double> optionalValue = Optional.of(this.historyStore.get(keyT));
+                        values[j] = optionalValue.get();
+                    }catch (Exception e){
+                        // in case there's no value stored for the given time we use the current value
+                        values[j] = load;
+                    }
+                }
+
+                // calculate the result according to L(s_{i+2}) = ( avgLoad(s_i) + median( { avgLoad(s_j) } ) ) / 2
+                double predictedLoad = (load + StatUtils.percentile(values, 50)) / 2;
 
                 HashMap<String, Object> result = new HashMap<>(1);
-                result.put("station", station);
-                result.put("value", value);
-                result.put("unit", unit);
-                result.put("ts_start", timeWindow.getWindowStart());
-                result.put("ts_end", timeWindow.getWindowEnd());
+                result.put("ts", nextPrediction / 1000);
+                result.put("house_id", houseId);
+                result.put("predicted_load", predictedLoad);
                 result.put("sys_time", System.currentTimeMillis());
+                result.put("data_time", this.timeWindow.getWindowEnd());
 
                 OutgoingMessageEnvelope resultMessage = new OutgoingMessageEnvelope(resultStream, outputKeySerde, outputMsgSerde, "1", "1", result);
                 messageCollector.send(resultMessage);
@@ -180,6 +215,7 @@ public final class SRBenchQ2TaskEsper implements StreamTask, InitableTask, Windo
         URL queryPath = EsperFactory.class.getResource(esperQueryPath);
         try {
             this.query = Resources.toString(queryPath, StandardCharsets.UTF_8);
+            this.query = query.replace("%MINUTES%", String.valueOf(this.windowSize));
         } catch (IOException e){
             logger.error(e);
             System.exit(1);
