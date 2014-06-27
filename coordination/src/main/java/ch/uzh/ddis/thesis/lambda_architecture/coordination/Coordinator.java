@@ -45,8 +45,8 @@ public class Coordinator {
     @Parameter(names = "-startDataTime", description = "start time of the first data item.")
     public long startDataTime = -1;
 
-    @Parameter(names = "-ticksPerMs", description = "data ticks (ms) per system ms")
-    public long ticksPerMs = 1000;
+    @Parameter(names = "-ticksPerMs", description = "data ticks (ms) per system ms, default=100")
+    public long ticksPerMs = 100;
 
     @Parameter(names = "-file-ending", description = "file ending to look for in path, default=csv")
     public String fileEnding = "csv";
