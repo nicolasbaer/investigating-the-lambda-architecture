@@ -1,4 +1,4 @@
-package ch.uzh.ddis.thesis.lambda_architecture.coordination.partitioner;
+package ch.uzh.ddis.thesis.lambda_architecture.data.partitioner;
 
 import kafka.producer.Partitioner;
 import org.apache.commons.lang.RandomStringUtils;
