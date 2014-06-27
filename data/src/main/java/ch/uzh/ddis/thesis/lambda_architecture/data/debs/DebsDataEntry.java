@@ -12,36 +12,23 @@ import java.util.Map;
 public class DebsDataEntry implements IDataEntry {
     private static final long serialVersionUID = 1L;
 
-    private final long rowId;
-    private final long timestamp;
-    private final double value;
-    private final DebsDataTypes.Measurement type;
-    private final int plugId;
-    private final int householdId;
-    private final int houseId;
+    private long rowId;
+    private long timestamp;
+    private double value;
+    private DebsDataTypes.Measurement type;
+    private int plugId;
+    private int householdId;
+    private int houseId;
 
-    private final String stringRepresentation;
-    private final Map<String, Object> map;
-    private final String id;
+    private String stringRepresentation;
+    private String id;
 
     public DebsDataEntry(String csvEntry){
-        this.stringRepresentation = csvEntry;
+        this.init(csvEntry);
+    }
 
-        String[] line = csvEntry.split(",");
-        this.rowId = Long.valueOf(line[0]);
-        this.timestamp = Long.valueOf(line[1]) * 1000;
-        this.value = Double.valueOf(line[2]);
-        this.type = line[3].equals("0") ? DebsDataTypes.Measurement.Work : DebsDataTypes.Measurement.Load;
-        this.plugId = Integer.valueOf(line[4]);
-        this.householdId = Integer.valueOf(line[5]);
-        this.houseId = Integer.valueOf(line[6]);
+    public DebsDataEntry(){
 
-        this.map = toMap();
-        StringBuilder idBuilder = new StringBuilder();
-        this.id = idBuilder.append(StringUtils.leftPad(String.valueOf(houseId), 2, '0'))
-                .append(StringUtils.leftPad(String.valueOf(householdId), 2, '0'))
-                .append(StringUtils.leftPad(String.valueOf(plugId), 2, '0'))
-                .toString();
     }
 
     private Map<String, Object> toMap(){
@@ -58,6 +45,25 @@ public class DebsDataEntry implements IDataEntry {
         return map;
     }
 
+    @Override
+    public void init(String csvEntry) {
+        this.stringRepresentation = csvEntry;
+
+        String[] line = csvEntry.split(",");
+        this.rowId = Long.valueOf(line[0]);
+        this.timestamp = Long.valueOf(line[1]) * 1000;
+        this.value = Double.valueOf(line[2]);
+        this.type = line[3].equals("0") ? DebsDataTypes.Measurement.Work : DebsDataTypes.Measurement.Load;
+        this.plugId = Integer.valueOf(line[4]);
+        this.householdId = Integer.valueOf(line[5]);
+        this.houseId = Integer.valueOf(line[6]);
+
+        StringBuilder idBuilder = new StringBuilder();
+        this.id = idBuilder.append(StringUtils.leftPad(String.valueOf(houseId), 2, '0'))
+                .append(StringUtils.leftPad(String.valueOf(householdId), 2, '0'))
+                .append(StringUtils.leftPad(String.valueOf(plugId), 2, '0'))
+                .toString();
+    }
 
     @Override
     public String getId() {
@@ -103,11 +109,12 @@ public class DebsDataEntry implements IDataEntry {
         return houseId;
     }
 
-    public String getStringRepresentation() {
+    @Override
+    public String toString() {
         return stringRepresentation;
     }
 
     public Map<String, Object> getMap() {
-        return map;
+        return this.toMap();
     }
 }

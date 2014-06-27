@@ -42,7 +42,7 @@
         <runtime.mongodb.port>27017</runtime.mongodb.port>
 
         <!-- dependency versions -->
-        <kafka-version>0.8.1</kafka-version>
+        <kafka-version>0.8.1.1</kafka-version>
         <samza-version>0.7.0</samza-version>
         <storm-version>0.9.1-incubating</storm-version>
         <curator-version>2.4.0</curator-version>
@@ -106,6 +106,20 @@
             </exclusions>
         </dependency>
 
+        <!-- networking -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.0.20.Final</version>
+        </dependency>
+
+        <!-- concurrency -->
+        <dependency>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+            <version>3.2.1</version>
+        </dependency>
+
         <!-- lang -->
         <dependency>
             <groupId>org.scala-lang</groupId>
@@ -128,6 +142,12 @@
             <version>1.2</version>
         </dependency>
 
+        <!-- math -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>3.3</version>
+        </dependency>
 
         <!-- command line parsing -->
         <dependency>

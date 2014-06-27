@@ -5,4 +5,6 @@ package ch.uzh.ddis.thesis.lambda_architecture.data;
  */
 public interface IDataEntry extends Partitioned, Timestamped, Identifiable, Topic {
 
+    public void init(String csvLine);
+
 }

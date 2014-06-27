@@ -29,7 +29,6 @@
             <version>${hadoop-version}</version>
         </dependency>
 
-
         <!-- utilities -->
         <dependency>
             <groupId>com.beust</groupId>

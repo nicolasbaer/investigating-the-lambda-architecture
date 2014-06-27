@@ -6,6 +6,8 @@ import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import kafka.producer.Partitioner;
 import kafka.utils.VerifiableProperties;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -18,6 +20,8 @@ import java.util.Map;
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public final class HashBucketPartitioner implements Partitioner {
+    private static final Logger logger = LogManager.getLogger();
+
     private final HashFunction hashFunction = Hashing.md5();
     private final Map<String, Integer> mapping = new HashMap<>();
 

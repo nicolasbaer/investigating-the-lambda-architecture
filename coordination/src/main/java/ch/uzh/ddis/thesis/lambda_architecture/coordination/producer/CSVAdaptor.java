@@ -3,6 +3,7 @@ package ch.uzh.ddis.thesis.lambda_architecture.coordination.producer;
 import ch.uzh.ddis.thesis.lambda_architecture.data.IDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.IDataFactory;
 import com.ecyrd.speed4j.StopWatch;
+import com.lmax.disruptor.RingBuffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
@@ -15,28 +16,25 @@ import java.io.*;
  *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public class CSVAdaptor<E extends IDataEntry> implements Runnable{
+public class CSVAdaptor implements Runnable{
     private static final Logger logger = LogManager.getLogger();
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final String performanceTopicThroughput = "csvreaderthroughput";
     private static final String performanceTopicTotal = "csvreadertotal";
 
     private final FileReader csvFileReader;
-    private final SystemTimeSynchronizer<E> synchronizer;
-    private final IDataFactory<E> dataFactory;
+    private final RingBuffer<IDataEntry> buffer;
+    private final IDataFactory dataFactory;
     private final String csvName;
-    private final int queueId;
 
     /**
      * @param csv CSV File to read from
-     * @param synchronizer time synchronizer to append data to.
      */
-    public CSVAdaptor(File csv, SystemTimeSynchronizer<E> synchronizer, IDataFactory<E> dataFactory, int queueId) throws FileNotFoundException {
-        this.synchronizer = synchronizer;
+    public CSVAdaptor(File csv, RingBuffer<IDataEntry> buffer, IDataFactory dataFactory) throws FileNotFoundException {
+        this.buffer = buffer;
         this.csvFileReader = new FileReader(csv);
         this.dataFactory = dataFactory;
         this.csvName = csv.getName();
-        this.queueId = queueId;
     }
 
     /**
@@ -49,7 +47,15 @@ public class CSVAdaptor<E extends IDataEntry> implements Runnable{
             String line;
             int performanceCounter = 0;
             while ((line = reader.readLine()) != null) {
-                synchronizer.addData(queueId, dataFactory.makeDataEntryFromCSV(line));
+                long sequence = buffer.next();
+
+                try
+                {
+                    IDataEntry data = buffer.get(sequence);
+                    data.init(line);
+                } finally {
+                    buffer.publish(sequence);
+                }
 
                 if(performanceCounter % 1000 == 0){
                     watch.stop();

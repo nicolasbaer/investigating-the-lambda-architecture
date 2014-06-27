@@ -15,37 +15,24 @@ import java.util.Map;
 public final class SRBenchDataEntry implements IDataEntry, Serializable{
     private static final long serialVersionUID = 1L;
 
-    private final long timestamp;
-    private final String station;
-    private final String measurement;
-    private final String value;
-    private final String unit;
-    private final String observation;
-    private final String id;
-    private final SRBenchDataTypes.Observation observationType;
-    private final SRBenchDataTypes.Measurement measurementType;
-    private final Map<String, Object> map;
-    private final String stringRepresentation;
+    private long timestamp;
+    private String station;
+    private String measurement;
+    private String value;
+    private String unit;
+    private String observation;
+    private String id;
+    private SRBenchDataTypes.Observation observationType;
+    private SRBenchDataTypes.Measurement measurementType;
+    private String stringRepresentation;
 
 
     public SRBenchDataEntry(String csvEntry){
-        this.stringRepresentation = csvEntry;
-        String[] line = csvEntry.split(",");
+        this.init(csvEntry);
+    }
 
-        this.timestamp = Long.valueOf(line[0]) * 1000;
-        this.station = line[1];
-        this.measurement = line[2];
-        this.value = line[3];
-        this.unit = line[4];
-        this.observation = line[5];
+    public SRBenchDataEntry(){
 
-        this.observationType = SRBenchDataTypes.Observation.valueOf(observation);
-        this.measurementType = SRBenchDataTypes.Measurement.valueOf(measurement);
-
-        StringBuilder idBuilder = new StringBuilder();
-        this.id = idBuilder.append(timestamp).append(station).append(observation).append(measurement).toString();
-
-        this.map = this.toMap();
     }
 
 
@@ -64,6 +51,25 @@ public final class SRBenchDataEntry implements IDataEntry, Serializable{
         map.put("observation", this.observationType.name());
 
         return map;
+    }
+
+    @Override
+    public void init(String csvEntry) {
+        this.stringRepresentation = csvEntry;
+        String[] line = csvEntry.split(",");
+
+        this.timestamp = Long.valueOf(line[0]) * 1000;
+        this.station = line[1];
+        this.measurement = line[2];
+        this.value = line[3];
+        this.unit = line[4];
+        this.observation = line[5];
+
+        this.observationType = SRBenchDataTypes.Observation.valueOf(observation);
+        this.measurementType = SRBenchDataTypes.Measurement.valueOf(measurement);
+
+        StringBuilder idBuilder = new StringBuilder();
+        this.id = idBuilder.append(timestamp).append(station).append(observation).append(measurement).toString();
     }
 
     @Override
@@ -118,6 +124,6 @@ public final class SRBenchDataEntry implements IDataEntry, Serializable{
     }
 
     public Map<String, Object> getMap() {
-        return map;
+        return this.toMap();
     }
 }

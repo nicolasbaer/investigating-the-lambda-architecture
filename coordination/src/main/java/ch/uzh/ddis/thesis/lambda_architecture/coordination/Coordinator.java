@@ -1,12 +1,14 @@
 package ch.uzh.ddis.thesis.lambda_architecture.coordination;
 
-import ch.uzh.ddis.thesis.lambda_architecture.coordination.producer.CSVAdaptor;
-import ch.uzh.ddis.thesis.lambda_architecture.coordination.producer.KafkaProducer;
-import ch.uzh.ddis.thesis.lambda_architecture.coordination.producer.SystemTimeSynchronizer;
-import ch.uzh.ddis.thesis.lambda_architecture.data.SRBench.SRBenchDataEntry;
+import ch.uzh.ddis.thesis.lambda_architecture.coordination.producer.*;
+import ch.uzh.ddis.thesis.lambda_architecture.data.IDataEntry;
+import ch.uzh.ddis.thesis.lambda_architecture.data.IDataFactory;
 import ch.uzh.ddis.thesis.lambda_architecture.data.SRBench.SRBenchDataFactory;
+import ch.uzh.ddis.thesis.lambda_architecture.data.debs.DebsDataFactory;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.dsl.Disruptor;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -49,37 +51,56 @@ public class Coordinator {
     @Parameter(names = "-file-ending", description = "file ending to look for in path, default=csv")
     public String fileEnding = "csv";
 
-    @Parameter(names = "-dataTopic", description = "generates the topic based on the data e.g. for srbench it will generate a topic for each observation")
-    public boolean dataTopic = false;
+    @Parameter(names = "-producer", description = "produce to kafka or netty (`kafka`, `netty`", required = true)
+    public String producer = "kafka";
 
     /**
      * Starts a CSVAdaptor for each csv file in the path and pipes the data through a system time synchronizer
-     * to Kafka.
+     * to either kafka or netty.
      *
      * @throws FileNotFoundException The path did not contain any csv files
      * @throws InterruptedException
      */
     public void start() throws InterruptedException, IOException {
-        Properties properties = new Properties();
-        properties.load(new FileInputStream(this.kafkaPropertiesPath));
 
-        KafkaProducer<SRBenchDataEntry> producer = new KafkaProducer<>(properties, this.topic, this.dataTopic);
-        SystemTimeSynchronizer<SRBenchDataEntry> synchronizer = new SystemTimeSynchronizer(producer, this.startSysTime, this.ticksPerMs, this.startDataTime);
+        IDataFactory dataFactory;
+        if(this.dataset.equals("srbench")){
+            dataFactory = new SRBenchDataFactory();
+        } else{
+            dataFactory = new DebsDataFactory();
+        }
+
+        ExecutorService executor = Executors.newCachedThreadPool();
+        int bufferSize = 2048; // power of 2 mandatory!
+
+        IProducerFactory producerFactory;
+        if(this.producer.equals("kafka")){
+            Properties properties = new Properties();
+            properties.load(new FileInputStream(this.kafkaPropertiesPath));
+
+            producerFactory = new KafkaProducerFactory(properties, this.topic);
+        }else{
+            producerFactory = new NettyProducerFactory(executor);
+        }
 
         Collection<File> files = this.getFilesFromPath();
-        ExecutorService executor = Executors.newFixedThreadPool(files.size() + 1);
-
         if(files.isEmpty()){
             throw new FileNotFoundException("No files found in the specified directory.");
         }
 
         for(File file : files){
-            int queueId = synchronizer.registerDataInput();
-            CSVAdaptor<SRBenchDataEntry> csvAdaptor = new CSVAdaptor<>(file, synchronizer, new SRBenchDataFactory(), queueId);
+            IProducer producer = producerFactory.makeProducer();
+            SystemTimeSynchronizer synchronizer = new SystemTimeSynchronizer(producer, this.startSysTime, this.ticksPerMs, this.startDataTime);
+
+            Disruptor<IDataEntry> disruptor = new Disruptor<>(dataFactory, bufferSize, executor);
+            disruptor.handleEventsWith(synchronizer);
+            disruptor.start();
+
+            RingBuffer<IDataEntry> ringBuffer = disruptor.getRingBuffer();
+
+            CSVAdaptor csvAdaptor = new CSVAdaptor(file, ringBuffer, dataFactory);
             executor.execute(csvAdaptor);
         }
-
-        executor.execute(synchronizer);
 
         executor.shutdown();
         executor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);

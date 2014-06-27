@@ -40,7 +40,7 @@
         </Logger>
 
         <!-- general console output -->
-        <Root level="WARN">
+        <Root level="WARNING">
             <AppenderRef ref="console"/>
         </Root>
     </Loggers>
