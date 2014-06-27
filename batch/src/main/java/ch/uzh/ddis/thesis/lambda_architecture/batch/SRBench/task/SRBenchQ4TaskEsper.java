@@ -1,7 +1,7 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.SRBench.task;
 
-import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.SlidingWindow;
-import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.TimeWindow;
+import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.SlidingWindow;
+import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TimeWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.data.SRBench.SRBenchDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.SimpleTimestamp;
 import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;

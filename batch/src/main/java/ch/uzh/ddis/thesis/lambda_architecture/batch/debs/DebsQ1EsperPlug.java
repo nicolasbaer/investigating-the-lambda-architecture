@@ -1,7 +1,7 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.debs;
 
-import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.TimeWindow;
-import ch.uzh.ddis.thesis.lambda_architecture.batch.time_window.TumblingWindow;
+import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TimeWindow;
+import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TumblingWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.data.SRBench.SRBenchDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.SimpleTimestamp;
 import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;

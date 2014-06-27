@@ -10,6 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>torque_deploy</artifactId>
+    <name>Torque Deployment Scripts</name>
 
 
 </project>

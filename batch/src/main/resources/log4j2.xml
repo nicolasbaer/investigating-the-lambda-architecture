@@ -39,6 +39,10 @@
             <AppenderRef ref="console"/>
         </Logger>
 
+        <Logger name="org.apache.samza" level="INFO" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+
         <!-- general console output -->
         <Root level="WARN">
             <AppenderRef ref="console"/>

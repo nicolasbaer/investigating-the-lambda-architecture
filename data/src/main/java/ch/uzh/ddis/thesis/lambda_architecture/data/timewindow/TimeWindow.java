@@ -1,4 +1,4 @@
-package ch.uzh.ddis.thesis.lambda_architecture.batch.time_window;
+package ch.uzh.ddis.thesis.lambda_architecture.data.timewindow;
 
 import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;
 
