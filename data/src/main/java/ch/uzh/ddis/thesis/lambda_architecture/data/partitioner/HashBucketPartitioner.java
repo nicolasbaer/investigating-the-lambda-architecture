@@ -9,6 +9,7 @@ import kafka.utils.VerifiableProperties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,7 +20,9 @@ import java.util.Map;
  *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public final class HashBucketPartitioner implements Partitioner {
+public final class HashBucketPartitioner implements Partitioner, Serializable {
+    static final long serialVersionUID = 42L;
+
     private static final Logger logger = LogManager.getLogger();
 
     private final HashFunction hashFunction = Hashing.md5();

@@ -10,7 +10,7 @@ public class NettyBuffer {
     private final ArrayBlockingQueue<String> buffer;
 
     public NettyBuffer() {
-        this.buffer = new ArrayBlockingQueue<String>(1000);
+        this.buffer = new ArrayBlockingQueue<String>(500);
     }
 
     public ArrayBlockingQueue<String> getBuffer() {
