@@ -131,6 +131,21 @@ def start_service(service, mapping, path, v_node_num, sleep=True):
         sh.bash(os.path.join(path, "storm_supervisor.sh"), mapping["zookeeper"], mapping["nimbus"], v_node_num)
         print "finished starting storm supervisor"
 
+    if service == "mongodb":
+        if sleep:
+            time.sleep(20)
+        print "starting mongodb"
+        sh.bash(os.path.join(path, "mongodb.sh"))
+        print "finished starting mongodb"
+
+    if service == "redis":
+        if sleep:
+            time.sleep(20)
+        print "starting redis"
+        sh.bash(os.path.join(path, "redis.sh"))
+        print "finished starting redis"
+
+
 def kill_service(service, install_root):
     pidfile = os.path.join(install_root, service, "pids", "pidfile")
     with open(pidfile) as f:
