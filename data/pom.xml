@@ -15,6 +15,15 @@
         of the SRBench and DEBS Dataset</description>
 
     <dependencies>
+
+        <!-- concurrency -->
+        <dependency>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+            <version>3.2.1</version>
+        </dependency>
+
+
         <!-- apache samza -->
         <dependency>
             <groupId>org.apache.samza</groupId>

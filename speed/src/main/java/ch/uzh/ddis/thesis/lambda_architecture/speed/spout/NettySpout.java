@@ -1,4 +1,4 @@
-package ch.uzh.ddis.thesis.lambda_architecture.storm.spout;
+package ch.uzh.ddis.thesis.lambda_architecture.speed.spout;
 
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -16,6 +16,7 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.util.CharsetUtil;
@@ -36,7 +37,7 @@ public class NettySpout extends BaseRichSpout {
 
     private final ArrayList<HostAndPort> hosts;
     private final IDataFactory dataFactory;
-    private final HashBucketPartitioner partitioner;
+    private HashBucketPartitioner partitioner;
 
     private SpoutOutputCollector outputCollector;
     private TopologyContext context;
@@ -48,14 +49,12 @@ public class NettySpout extends BaseRichSpout {
     private EventLoopGroup workerGroup;
 
     private NettyHeartbeat nettyHeartbeat;
+    private boolean finished = false;
 
 
     public NettySpout(ArrayList<HostAndPort> hosts, IDataFactory dataFactory) {
         this.hosts = hosts;
         this.dataFactory = dataFactory;
-
-        this.partitioner = new HashBucketPartitioner();
-        this.client = new NettyClient();
     }
 
     @Override
@@ -66,6 +65,9 @@ public class NettySpout extends BaseRichSpout {
 
     @Override
     public void open(Map conf, TopologyContext topologyContext, SpoutOutputCollector spoutOutputCollector) {
+        this.partitioner = new HashBucketPartitioner();
+        this.client = new NettyClient();
+
         this.outputCollector = spoutOutputCollector;
         this.config = conf;
         this.context = topologyContext;
@@ -84,41 +86,41 @@ public class NettySpout extends BaseRichSpout {
     private void connect(){
         HostAndPort host = this.hosts.get(context.getThisTaskIndex());
 
-        try {
-            Bootstrap b = new Bootstrap();
-            b.group(workerGroup);
-            b.channel(NioSocketChannel.class);
-            b.option(ChannelOption.SO_KEEPALIVE, true);
-            b.handler(new ChannelInitializer<SocketChannel>() {
-                @Override
-                public void initChannel(SocketChannel ch) throws Exception {
-                    ch.pipeline().addLast(new StringDecoder(CharsetUtil.UTF_8));
-                    ch.pipeline().addLast(client);
-                    ch.pipeline().addLast(new StringEncoder(CharsetUtil.UTF_8));
-                }
-            });
-
-            try {
-                this.channelFuture = b.connect(host.getHostText(), host.getPort()).addListener(new ChannelFutureListener() {
-                    @Override
-                    public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                        if (!channelFuture.isSuccess()) {
-                            channelFuture.channel().eventLoop().schedule(new Runnable() {
-                                @Override
-                                public void run() {
-                                    logger.debug("reconnecting");
-                                    connect();
-                                }
-                            }, 10, TimeUnit.MILLISECONDS);
-                        }
-                    }
-                }).sync();
-            } catch (InterruptedException e){
-                logger.error(e);
+        Bootstrap b = new Bootstrap();
+        b.group(workerGroup);
+        b.channel(NioSocketChannel.class);
+        b.option(ChannelOption.SO_KEEPALIVE, true);
+        b.handler(new ChannelInitializer<SocketChannel>() {
+            @Override
+            public void initChannel(SocketChannel ch) throws Exception {
+                ch.pipeline().addLast("frameDecoder", new LineBasedFrameDecoder(120));
+                ch.pipeline().addLast(new StringDecoder(CharsetUtil.UTF_8));
+                ch.pipeline().addLast(client);
+                ch.pipeline().addLast(new StringEncoder(CharsetUtil.UTF_8));
             }
-        } finally {
-            workerGroup.shutdownGracefully();
+        });
+
+        try {
+            this.channelFuture = b.connect(host.getHostText(), host.getPort()).addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                    if (!finished && !channelFuture.isSuccess()) {
+                        channelFuture.channel().eventLoop().schedule(new Runnable() {
+                            @Override
+                            public void run() {
+                                logger.debug("reconnecting");
+                                connect();
+                            }
+                        }, 100, TimeUnit.MILLISECONDS);
+                    }
+                }
+
+
+            }).sync();
+        } catch (InterruptedException e){
+            logger.error(e);
         }
+
     }
 
     @Override
@@ -133,7 +135,9 @@ public class NettySpout extends BaseRichSpout {
 
     @Override
     public void close() {
+        logger.debug("close spout");
         super.close();
+        this.finished = true;
 
         try {
             this.nettyHeartbeat.setFinish(true);

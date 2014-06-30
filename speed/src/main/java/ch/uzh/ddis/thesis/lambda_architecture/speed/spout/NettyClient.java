@@ -1,4 +1,4 @@
-package ch.uzh.ddis.thesis.lambda_architecture.storm.spout;
+package ch.uzh.ddis.thesis.lambda_architecture.speed.spout;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -31,10 +31,7 @@ public class NettyClient extends ChannelInboundHandlerAdapter implements Seriali
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         this.lastDataReceived = System.currentTimeMillis();
-        String[] messages = String.valueOf(msg).split("\\n");
-        for(String message : messages){
-            queue.put(message);
-        }
+        queue.put(String.valueOf(msg));
         ctx.channel().writeAndFlush("next");
     }
 
@@ -46,8 +43,21 @@ public class NettyClient extends ChannelInboundHandlerAdapter implements Seriali
         this.channel = ctx.channel();
 
         // initiate data transfer
-        ctx.channel().writeAndFlush("next");
+        this.channel.writeAndFlush("next");
 
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        super.channelInactive(ctx);
+
+        logger.debug("channel inactive...");
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        super.exceptionCaught(ctx, cause);
+        logger.error(cause);
     }
 
     /**

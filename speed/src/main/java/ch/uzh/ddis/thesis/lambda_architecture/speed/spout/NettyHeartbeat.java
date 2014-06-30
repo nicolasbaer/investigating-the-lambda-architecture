@@ -1,4 +1,4 @@
-package ch.uzh.ddis.thesis.lambda_architecture.storm.spout;
+package ch.uzh.ddis.thesis.lambda_architecture.speed.spout;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

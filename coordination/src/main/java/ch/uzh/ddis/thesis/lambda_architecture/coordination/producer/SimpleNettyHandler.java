@@ -18,7 +18,7 @@ public class SimpleNettyHandler extends ChannelInboundHandlerAdapter {
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
 
     private static final int max_buffer_size = 1000;
-    private static final int max_batch_size = 250;
+    private static final int max_batch_size = 150;
 
     private final NettyBuffer buffer;
 

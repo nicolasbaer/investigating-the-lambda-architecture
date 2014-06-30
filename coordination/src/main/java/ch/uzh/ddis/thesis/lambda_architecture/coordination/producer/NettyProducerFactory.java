@@ -23,6 +23,7 @@ public class NettyProducerFactory implements IProducerFactory{
             port = startPort;
         }else{
             port = ports.get(ports.size()-1);
+            port++;
         }
 
         this.ports.add(port);

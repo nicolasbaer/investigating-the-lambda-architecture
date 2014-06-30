@@ -1,4 +1,4 @@
-<Configuration>
+<Configuration packages="org.apache.logging.log4j.flume.appender">
     <Appenders>
         <Console name="console" target="SYSTEM_OUT" ignoreExceptions="true">
             <filters>
@@ -12,7 +12,7 @@
             <filters>
                 <MarkerFilter marker="PERFORMANCE" onMatch="ACCEPT" onMismatch="DENY"/>
             </filters>
-            <Agent host="127.0.0.1" port="4141"/>
+            <Agent host="${runtime.flume.host}" port="${runtime.flume.port}"/>
             <PatternLayout pattern="@timestamp=%d{UNIX_MILLIS} class=%c{1} %msg"/>
         </Flume>
 
@@ -20,7 +20,7 @@
             <filters>
                 <MarkerFilter marker="DEBUGFLUME" onMatch="ACCEPT" onMismatch="DENY"/>
             </filters>
-            <Agent host="127.0.0.1" port="4141"/>
+            <Agent host="${runtime.flume.host}" port="${runtime.flume.port}"/>
             <PatternLayout pattern="@timestamp=%d{UNIX_MILLIS} class=%c{1} %msg"/>
         </Flume>
 
@@ -33,14 +33,14 @@
     </Appenders>
 
     <Loggers>
-        <Logger name="ch.uzh.ddis.thesis.lambda_architecture" level="DEBUG" additivity="false">
+        <Logger name="ch.uzh.ddis.thesis.lambda_architecture" level="INFO" additivity="false">
             <AppenderRef ref="performance-flume-async"/>
             <AppenderRef ref="debug-flume-async"/>
             <AppenderRef ref="console"/>
         </Logger>
 
         <!-- general console output -->
-        <Root level="DEBUG">
+        <Root level="WARN">
             <AppenderRef ref="console"/>
         </Root>
     </Loggers>

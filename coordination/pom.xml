@@ -30,6 +30,13 @@
             <version>${hadoop-version}</version>
         </dependency>
 
+        <!-- concurrency -->
+        <dependency>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+            <version>3.2.1</version>
+        </dependency>
+
         <!-- utilities -->
         <dependency>
             <groupId>com.beust</groupId>

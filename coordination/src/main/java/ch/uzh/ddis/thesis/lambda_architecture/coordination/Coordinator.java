@@ -1,10 +1,9 @@
 package ch.uzh.ddis.thesis.lambda_architecture.coordination;
 
 import ch.uzh.ddis.thesis.lambda_architecture.coordination.producer.*;
+import ch.uzh.ddis.thesis.lambda_architecture.data.Dataset;
 import ch.uzh.ddis.thesis.lambda_architecture.data.IDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.IDataFactory;
-import ch.uzh.ddis.thesis.lambda_architecture.data.SRBench.SRBenchDataFactory;
-import ch.uzh.ddis.thesis.lambda_architecture.data.debs.DebsDataFactory;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.lmax.disruptor.RingBuffer;
@@ -63,12 +62,7 @@ public class Coordinator {
      */
     public void start() throws InterruptedException, IOException {
 
-        IDataFactory dataFactory;
-        if(this.dataset.equals("srbench")){
-            dataFactory = new SRBenchDataFactory();
-        } else{
-            dataFactory = new DebsDataFactory();
-        }
+        IDataFactory dataFactory = Dataset.valueOf(this.dataset).getFactory();
 
         ExecutorService executor = Executors.newCachedThreadPool();
         int bufferSize = 2048; // power of 2 mandatory!

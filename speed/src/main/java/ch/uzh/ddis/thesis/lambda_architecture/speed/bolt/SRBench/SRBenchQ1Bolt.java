@@ -1,4 +1,4 @@
-package ch.uzh.ddis.thesis.lambda_architecture.storm.bolt.SRBench;
+package ch.uzh.ddis.thesis.lambda_architecture.speed.bolt.SRBench;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -27,6 +27,7 @@ import org.javatuples.Pair;
 import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -58,19 +59,20 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
     private boolean firstTimestampSaved = false;
 
     private Jedis redisCache;
-    private String redisHost;
+    private URI redisHost;
 
     private long lastTimestamp = 0;
     private long lastDataReceived;
     private long processCounter = 0;
     private StopWatch processWatch;
 
-    public SRBenchQ1Bolt(String redisHost) {
+    public SRBenchQ1Bolt(URI redisHost) {
         this.redisHost = redisHost;
     }
 
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+        logger.debug("prepare bolt");
         this.outputCollector = collector;
         this.config = stormConf;
         this.context = context;
@@ -103,6 +105,10 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
 
         this.timeWindow.addEvent(entry);
 
+        if(this.processCounter == 0){
+            this.processWatch = new StopWatch();
+        }
+
         this.processCounter++;
         if(this.processCounter % 1000 == 0){
             this.processWatch.stop();
@@ -131,7 +137,7 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
                 result.put("ts_end", timeWindow.getWindowEnd());
                 result.put("sys_time", System.currentTimeMillis());
 
-                this.outputCollector.emit(new Values(result, esperEngineName));
+                this.outputCollector.emit(new Values(result, esperEngineName, this.taskId));
             }
         }
     }
@@ -139,7 +145,7 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        Fields fields = new Fields("result", "topic");
+        Fields fields = new Fields("result", "topic", "partition");
     }
 
     private void sendTimeEvent(long timestamp){

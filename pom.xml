@@ -22,13 +22,13 @@
     </developers>
 
     <modules>
-        <module>storm</module>
         <module>torque_deploy</module>
         <module>batch</module>
         <module>coordination</module>
         <module>data</module>
         <module>utils</module>
         <module>speed</module>
+        <module>partitioner</module>
     </modules>
 
     <properties>
@@ -41,6 +41,10 @@
         <runtime.yarn.fs.defaultFS>hdfs://$host:8020</runtime.yarn.fs.defaultFS>
         <runtime.mongodb.host>localhost</runtime.mongodb.host>
         <runtime.mongodb.port>27017</runtime.mongodb.port>
+        <!-- enter multiple netty addresses using ; as delimitier -->
+        <runtime.coordinator.netty.address.list>localhost:5050</runtime.coordinator.netty.address.list>
+        <runtime.redis.uri>localhost:6379</runtime.redis.uri>
+        <runtime.speed.num.workers>1</runtime.speed.num.workers>
 
         <!-- dependency versions -->
         <kafka-version>0.8.1.1</kafka-version>
@@ -112,13 +116,6 @@
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
             <version>4.0.20.Final</version>
-        </dependency>
-
-        <!-- concurrency -->
-        <dependency>
-            <groupId>com.lmax</groupId>
-            <artifactId>disruptor</artifactId>
-            <version>3.2.1</version>
         </dependency>
 
         <!-- lang -->
