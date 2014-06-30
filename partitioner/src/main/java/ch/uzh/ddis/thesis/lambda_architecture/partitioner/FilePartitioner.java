@@ -25,6 +25,9 @@ public class FilePartitioner {
     @Parameter(names = "-partitions", description = "number of partitions", required = true)
     public int partitions;
 
+    @Parameter(names = "-num_output", description = "number of output files, usually the same as partitions")
+    public int outputNum = 0;
+
     @Parameter(names = "-out", description = "path for the partitioned files", required = false)
     public String out;
 
@@ -41,12 +44,13 @@ public class FilePartitioner {
         }
         String name = FilenameUtils.getBaseName(path);
         String ending = FilenameUtils.getExtension(path);
+        int outputFiles = outputNum == 0 ? this.partitions : outputNum;
 
         if(file.canRead()){
-            File[] files = new File[this.partitions];
-            BufferedWriter[] writers = new BufferedWriter[this.partitions];
+            File[] files = new File[outputFiles];
+            BufferedWriter[] writers = new BufferedWriter[outputFiles];
 
-            for(int i = 0; i < this.partitions; i++){
+            for(int i = 0; i < outputFiles; i++){
                 File f = new File(parent + name + "-part-" + i + "." + ending);
                 files[i] = f;
                 BufferedWriter writer = new BufferedWriter(new FileWriter(f));
@@ -61,11 +65,11 @@ public class FilePartitioner {
 
                 int partition = hashBucketPartitioner.partition(entry.getPartitionKey(), this.partitions);
 
-                writers[partition].write(line);
-                writers[partition].newLine();
+                writers[partition % outputFiles].write(line);
+                writers[partition % outputFiles].newLine();
             }
 
-            for(int i = 0; i < this.partitions; i++){
+            for(int i = 0; i < outputFiles; i++){
                 writers[i].flush();
                 writers[i].close();
             }
