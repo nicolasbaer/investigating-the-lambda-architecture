@@ -27,7 +27,6 @@ import org.javatuples.Pair;
 import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -59,14 +58,14 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
     private boolean firstTimestampSaved = false;
 
     private Jedis redisCache;
-    private URI redisHost;
+    private String redisHost;
 
     private long lastTimestamp = 0;
     private long lastDataReceived;
     private long processCounter = 0;
     private StopWatch processWatch;
 
-    public SRBenchQ1Bolt(URI redisHost) {
+    public SRBenchQ1Bolt(String redisHost) {
         this.redisHost = redisHost;
     }
 
@@ -146,6 +145,7 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         Fields fields = new Fields("result", "topic", "partition");
+        declarer.declare(fields);
     }
 
     private void sendTimeEvent(long timestamp){

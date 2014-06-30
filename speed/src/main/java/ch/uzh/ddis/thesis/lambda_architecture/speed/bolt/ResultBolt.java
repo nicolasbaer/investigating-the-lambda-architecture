@@ -66,7 +66,7 @@ public class ResultBolt extends BaseRichBolt {
 
         if(processCounter % 1000 == 0) {
             this.processWatch.stop();
-            logger.info(performance, "topic=speedStoreResult topic={} stepSize=1000 duration={}", topic, this.processWatch.getTimeMicros());
+            logger.info(performance, "topic=speedStoreResult resultStream={} stepSize=1000 duration={}", topic, this.processWatch.getTimeMicros());
             this.processWatch = new StopWatch();
         }
         processCounter++;

@@ -43,8 +43,9 @@
         <runtime.mongodb.port>27017</runtime.mongodb.port>
         <!-- enter multiple netty addresses using ; as delimitier -->
         <runtime.coordinator.netty.address.list>localhost:5050</runtime.coordinator.netty.address.list>
-        <runtime.redis.uri>localhost:6379</runtime.redis.uri>
+        <runtime.redis.host>localhost</runtime.redis.host>
         <runtime.speed.num.workers>1</runtime.speed.num.workers>
+        <runtime.speed.num.partitions>8</runtime.speed.num.partitions>
 
         <!-- dependency versions -->
         <kafka-version>0.8.1.1</kafka-version>

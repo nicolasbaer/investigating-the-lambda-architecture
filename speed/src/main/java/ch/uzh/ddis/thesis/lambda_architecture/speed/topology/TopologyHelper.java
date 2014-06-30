@@ -15,7 +15,6 @@ import com.beust.jcommander.Parameter;
 import com.google.common.net.HostAndPort;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Properties;
@@ -32,25 +31,37 @@ public class TopologyHelper {
     public String dataset;
 
 
+    /**
+     * Starts the topology based on the given cli arguments and properties in the property file.
+     * The following highlights the main points to consider:
+     * - A spout is started for each netty host provided in the properties file in order to consume data.
+     * - The spout will partition the
+     *
+     * @throws IOException
+     * @throws URISyntaxException
+     * @throws AlreadyAliveException
+     * @throws InvalidTopologyException
+     */
     public void start() throws IOException, URISyntaxException, AlreadyAliveException, InvalidTopologyException {
         Properties properties = new Properties();
         properties.load(this.getClass().getResourceAsStream("/speed.properties"));
 
         String nettyServerList = properties.getProperty("speed.netty.server.list");
         int numWorkers = Integer.valueOf(properties.getProperty("speed.num.workers"));
-        URI redisUri = new URI(properties.getProperty("speed.redis.uri"));
+        int partitions = Integer.valueOf(properties.getProperty("speed.num.partitions"));
+        String redisHost = properties.getProperty("speed.redis.host");
         String mongoDbHost = properties.getProperty("speed.result.mongodb.host");
         String mongoDbPort = properties.getProperty("speed.result.mongodb.port");
         String mongoDbName = properties.getProperty("speed.result.mongodb.db");
 
         ArrayList<HostAndPort> hosts = this.parseHosts(nettyServerList);
-        int partitions = hosts.size();
 
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("netty", new NettySpout(hosts, Dataset.valueOf(this.dataset).getFactory()), partitions);
+        builder.setSpout("netty", new NettySpout(hosts, Dataset.valueOf(this.dataset).getFactory()), hosts.size());
 
+        System.out.println(this.question);
         if(this.question.equals("srbench-q1")){
-            builder.setBolt(this.question, new SRBenchQ1Bolt(redisUri), partitions).fieldsGrouping("netty", new Fields("partition"));
+            builder.setBolt(this.question, new SRBenchQ1Bolt(redisHost), partitions).fieldsGrouping("netty", new Fields("partition"));
         }
 
 
@@ -59,7 +70,7 @@ public class TopologyHelper {
         Config conf = new Config();
         conf.setNumWorkers(numWorkers);
 
-        StormSubmitter.submitTopology(this.question, conf, builder.createTopology());
+        StormSubmitter.submitTopology(this.question + "-topology", conf, builder.createTopology());
     }
 
     private ArrayList<HostAndPort> parseHosts(String hostList){
