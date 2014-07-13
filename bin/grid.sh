@@ -233,6 +233,7 @@ start_mongodb() {
 
 start_redis() {
   if [ -f $DEPLOY_ROOT_DIR/$SYSTEM/src/redis-server ]; then
+    mkdir -p /tmp/redis
     cd $DEPLOY_ROOT_DIR/$SYSTEM
     mkdir -p logs
     mkdir -p pids
