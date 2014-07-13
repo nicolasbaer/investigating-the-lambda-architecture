@@ -45,7 +45,7 @@ public final class SRBenchQ6TaskEsper implements StreamTask, InitableTask, Windo
     private static final long shutdownWaitThreshold = (1000 * 60 * 5); // 5 minutes
     private final String uuid = UUID.randomUUID().toString();
 
-    private static final String esperEngineName = "srbench-q4";
+    private static final String esperEngineName = "srbench-q6";
     private static final String esperQueryPathRainfall = "/esper-queries/srbench-q6-rainfall.esper";
     private static final String esperQueryPathSnowfall = "/esper-queries/srbench-q6-snowfall.esper";
     private static final String esperQueryPathVisibility = "/esper-queries/srbench-q6-visibility.esper";

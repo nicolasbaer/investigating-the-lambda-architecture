@@ -1,8 +1,8 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.debs;
 
+import ch.uzh.ddis.thesis.lambda_architecture.data.debs.DebsDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TimeWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TumblingWindow;
-import ch.uzh.ddis.thesis.lambda_architecture.data.SRBench.SRBenchDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.SimpleTimestamp;
 import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;
 import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperFactory;
@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.UUID;
 
 /**
- * Stream Task to answer SRBench Question 1 using esper engine:
  *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
@@ -89,7 +88,7 @@ public final class DebsQ1EsperPlug implements StreamTask, InitableTask, Windowab
 
     @Override
     public void process(IncomingMessageEnvelope incomingMessageEnvelope, MessageCollector messageCollector, TaskCoordinator taskCoordinator) {
-        SRBenchDataEntry entry = (SRBenchDataEntry) incomingMessageEnvelope.getMessage();
+        DebsDataEntry entry = new DebsDataEntry((String) incomingMessageEnvelope.getMessage());
 
         if(!firstTimestampSaved){
             this.firstTimestampStore.put(firstTimestampKey, entry.getTimestamp());
@@ -97,7 +96,7 @@ public final class DebsQ1EsperPlug implements StreamTask, InitableTask, Windowab
         }
 
         this.sendTimeEvent(entry.getTimestamp());
-        this.esper.sendEvent(entry.getMap(), entry.getMeasurement());
+        this.esper.sendEvent(entry.getMap(), entry.getType().toString());
 
         if(!this.timeWindow.isInWindow(entry)) {
             this.processNewData(messageCollector);
@@ -225,7 +224,7 @@ public final class DebsQ1EsperPlug implements StreamTask, InitableTask, Windowab
             System.exit(1);
         }
 
-        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench(esperEngineName + "-" + uuid);
+        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderDebs(esperEngineName + "-" + uuid);
         EPAdministrator cepAdm = eps.getEPAdministrator();
         EPStatement cepStatement = cepAdm.createEPL(query);
         this.esperUpdateListener = new EsperUpdateListener();
