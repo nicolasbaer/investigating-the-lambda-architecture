@@ -27,6 +27,8 @@ public class CSVAdaptor implements Runnable{
     private final IDataFactory dataFactory;
     private final String csvName;
 
+    private boolean finished = false;
+
     /**
      * @param csv CSV File to read from
      */
@@ -69,6 +71,12 @@ public class CSVAdaptor implements Runnable{
         } catch (IOException e){
             logger.error("could not read csv line with error message `{}`", e.getMessage());
         }
+
+        try {
+            reader.close();
+        } catch (IOException e) {
+            logger.error(e);
+        }
     }
 
     @Override
@@ -77,5 +85,12 @@ public class CSVAdaptor implements Runnable{
         this.produceMessages();
         watch.stop();
         logger.info(performance, "topic={} duration={} csv={}", performanceTopicTotal, watch.getTimeMicros(), csvName);
+
+        this.finished = true;
+    }
+
+
+    public boolean isFinished() {
+        return finished;
     }
 }

@@ -10,12 +10,16 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
+import java.util.UUID;
+
 /**
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class SimpleNettyHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LogManager.getLogger();
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
+
+    private final String uuid = UUID.randomUUID().toString();
 
     private static final int max_buffer_size = 1000;
     private static final int max_batch_size = 150;
@@ -34,8 +38,6 @@ public class SimpleNettyHandler extends ChannelInboundHandlerAdapter {
         super.channelRead(ctx, msg);
         Channel channel = ctx.channel();
 
-        logger.debug("received request");
-
         if(this.stopWatch == null){
             this.stopWatch = new StopWatch();
         }
@@ -44,7 +46,7 @@ public class SimpleNettyHandler extends ChannelInboundHandlerAdapter {
         for(int i = 0; i<max_batch_size; i++){
             Optional<String> optionalData = Optional.fromNullable(buffer.getBuffer().poll());
             if(optionalData.isPresent()){
-                messagePacket.append(optionalData.get()).append("\n");
+                messagePacket.append(optionalData.get()).append("$");
 
                 this.processCounter++;
                 if(this.processCounter % 1000 == 0){
@@ -57,13 +59,15 @@ public class SimpleNettyHandler extends ChannelInboundHandlerAdapter {
             }
         }
 
+        messagePacket.append("\n");
+
         channel.writeAndFlush(messagePacket);
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         super.channelActive(ctx);
-        logger.debug("channel open");
+        logger.info("channel open {}", uuid);
     }
 
     @Override
@@ -73,7 +77,8 @@ public class SimpleNettyHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) { // (4)
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        logger.error("netty producer caught exception: ", cause);
         cause.printStackTrace();
         ctx.close();
     }

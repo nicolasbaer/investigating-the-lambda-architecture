@@ -18,7 +18,7 @@ import org.apache.logging.log4j.Logger;
 public class NettyProducer extends ChannelInboundHandlerAdapter implements IProducer {
     private static final Logger logger = LogManager.getLogger();
 
-    private static final int readTimeout = 5; // in seconds
+    private static final int readTimeout = 300; // in seconds
 
     private final int port;
 

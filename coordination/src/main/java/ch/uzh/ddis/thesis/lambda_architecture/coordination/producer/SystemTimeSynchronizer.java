@@ -29,6 +29,8 @@ public final class SystemTimeSynchronizer implements EventHandler<IDataEntry> {
     private long processCounter = 0;
     private StopWatch processWatch;
 
+    private long currentSequence = 0;
+
     /**
      *
      * @param producer producer to write to
@@ -46,6 +48,7 @@ public final class SystemTimeSynchronizer implements EventHandler<IDataEntry> {
 
     @Override
     public void onEvent(IDataEntry data, long sequence, boolean endOfBatch) throws Exception {
+        this.currentSequence = sequence;
         Long currentSystemTime = System.currentTimeMillis();
         if(systemTimeStart > currentSystemTime){
             try {
@@ -92,5 +95,9 @@ public final class SystemTimeSynchronizer implements EventHandler<IDataEntry> {
             logger.info(performance, "topic=synchronizerThroughput stepSize=1000 duration={}", this.processWatch.getTimeMicros());
             this.processWatch = new StopWatch();
         }
+    }
+
+    public long getCurrentSequence() {
+        return currentSequence;
     }
 }

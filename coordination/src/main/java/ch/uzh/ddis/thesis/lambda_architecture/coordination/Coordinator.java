@@ -9,6 +9,7 @@ import com.beust.jcommander.Parameter;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import org.apache.commons.io.FileUtils;
+import org.javatuples.Quintet;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,6 +17,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -82,6 +84,8 @@ public class Coordinator {
             throw new FileNotFoundException("No files found in the specified directory.");
         }
 
+        ArrayList<Quintet<CSVAdaptor, Disruptor<IDataEntry>, RingBuffer<IDataEntry>, IProducer, SystemTimeSynchronizer>> threads = new ArrayList<>(files.size());
+
         for(File file : files){
             IProducer producer = producerFactory.makeProducer();
             SystemTimeSynchronizer synchronizer = new SystemTimeSynchronizer(producer, this.startSysTime, this.ticksPerMs, this.startDataTime);
@@ -94,10 +98,30 @@ public class Coordinator {
 
             CSVAdaptor csvAdaptor = new CSVAdaptor(file, ringBuffer, dataFactory);
             executor.execute(csvAdaptor);
+
+            Quintet<CSVAdaptor, Disruptor<IDataEntry>, RingBuffer<IDataEntry>, IProducer, SystemTimeSynchronizer> thread = new Quintet<>(csvAdaptor, disruptor, ringBuffer, producer, synchronizer);
+            threads.add(thread);
         }
 
-        executor.shutdown();
-        executor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+
+        while(!threads.isEmpty()){
+            Iterator<Quintet<CSVAdaptor, Disruptor<IDataEntry>, RingBuffer<IDataEntry>, IProducer, SystemTimeSynchronizer>> it = threads.iterator();
+            while(it.hasNext()){
+                Quintet<CSVAdaptor, Disruptor<IDataEntry>, RingBuffer<IDataEntry>, IProducer, SystemTimeSynchronizer> thread = it.next();
+                if(thread.getValue0().isFinished() && thread.getValue2().getCursor() == thread.getValue4().getCurrentSequence()){
+                    thread.getValue3().close();
+                    thread.getValue1().halt();
+
+                    it.remove();
+                }
+            }
+
+            Thread.sleep(10000);
+        }
+
+
+        executor.shutdownNow();
+        executor.awaitTermination(5, TimeUnit.SECONDS);
     }
 
 
@@ -123,6 +147,7 @@ public class Coordinator {
 
         try {
             coordinator.start();
+            System.exit(0);
         } catch (IOException | InterruptedException e){
             System.out.println("Something went terribly wrong! error = `" + e + "`");
         }
