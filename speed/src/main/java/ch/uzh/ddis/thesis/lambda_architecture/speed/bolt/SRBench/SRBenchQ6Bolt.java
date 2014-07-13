@@ -30,12 +30,14 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public class SRBenchQ1Bolt extends BaseRichBolt {
+public class SRBenchQ6Bolt extends BaseRichBolt {
     private static final Logger logger = LogManager.getLogger();
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
@@ -46,11 +48,17 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
 
     private int taskId;
 
-    private static final String esperEngineName = "srbench-q1";
-    private static final String esperQueryPath = "/esper-queries/srbench-q1.esper";
+    private static final String esperEngineName = "srbench-q6";
+    private static final String esperQueryPathRainfall = "/esper-queries/srbench-q6-rainfall.esper";
+    private static final String esperQueryPathSnowfall = "/esper-queries/srbench-q6-snowfall.esper";
+    private static final String esperQueryPathVisibility = "/esper-queries/srbench-q6-visibility.esper";
     private static final long windowSize = 60l * 60l * 1000l; // 1 hour
-    private EsperUpdateListener esperUpdateListener;
-    private String query;
+    private EsperUpdateListener esperUpdateListenerRainfall;
+    private EsperUpdateListener esperUpdateListenerSnowfall;
+    private EsperUpdateListener esperUpdateListenerVisibility;
+    private String queryRainfall;
+    private String querySnowfall;
+    private String queryVisibility;
     private EPRuntime esper;
 
     private TimeWindow<Timestamped> timeWindow;
@@ -65,7 +73,7 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
     private long processCounter = 0;
     private StopWatch processWatch;
 
-    public SRBenchQ1Bolt(String redisHost) {
+    public SRBenchQ6Bolt(String redisHost) {
         this.redisHost = redisHost;
     }
 
@@ -118,19 +126,43 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
     }
 
     private void processNewData(){
-        if(this.esperUpdateListener.hasNewData()){
-            Pair<EventBean[], EventBean[]> eventDataTouple = this.esperUpdateListener.getNewData();
+
+        Set<String> stations = new HashSet<>();
+
+        if(this.esperUpdateListenerRainfall.hasNewData()){
+            Pair<EventBean[], EventBean[]> eventDataTouple = this.esperUpdateListenerRainfall.getNewData();
             EventBean[] newEvents = eventDataTouple.getValue0();
 
             for(int i = 0; i < newEvents.length; i++){
                 String station = (String) newEvents[i].get("station");
-                String value = String.valueOf(newEvents[i].get("value"));
-                String unit = (String) newEvents[i].get("unit");
+                stations.add(station);
+            }
+        }
 
+        if(this.esperUpdateListenerSnowfall.hasNewData()){
+            Pair<EventBean[], EventBean[]> eventDataTouple = this.esperUpdateListenerSnowfall.getNewData();
+            EventBean[] newEvents = eventDataTouple.getValue0();
+
+            for(int i = 0; i < newEvents.length; i++){
+                String station = (String) newEvents[i].get("station");
+                stations.add(station);
+            }
+        }
+
+        if(this.esperUpdateListenerVisibility.hasNewData()){
+            Pair<EventBean[], EventBean[]> eventDataTouple = this.esperUpdateListenerVisibility.getNewData();
+            EventBean[] newEvents = eventDataTouple.getValue0();
+
+            for(int i = 0; i < newEvents.length; i++){
+                String station = (String) newEvents[i].get("station");
+                stations.add(station);
+            }
+        }
+
+        if(!stations.isEmpty()){
+            for(String station : stations){
                 HashMap<String, Object> result = new HashMap<>(1);
                 result.put("station", station);
-                result.put("value", value);
-                result.put("unit", unit);
                 result.put("ts_start", timeWindow.getWindowStart());
                 result.put("ts_end", timeWindow.getWindowEnd());
                 result.put("sys_time", System.currentTimeMillis());
@@ -138,6 +170,7 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
                 this.outputCollector.emit(new Values(result, esperEngineName, this.taskId));
             }
         }
+
     }
 
 
@@ -168,9 +201,13 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
     }
 
     private void initEsper(){
-        URL queryPath = EsperFactory.class.getResource(esperQueryPath);
+        URL queryPathRainfall = EsperFactory.class.getResource(esperQueryPathRainfall);
+        URL queryPathSnowfall = EsperFactory.class.getResource(esperQueryPathSnowfall);
+        URL queryPathVisibility = EsperFactory.class.getResource(esperQueryPathVisibility);
         try {
-            this.query = Resources.toString(queryPath, StandardCharsets.UTF_8);
+            this.queryRainfall = Resources.toString(queryPathRainfall, StandardCharsets.UTF_8);
+            this.querySnowfall = Resources.toString(queryPathSnowfall, StandardCharsets.UTF_8);
+            this.queryVisibility = Resources.toString(queryPathVisibility, StandardCharsets.UTF_8);
         } catch (IOException e){
             logger.error(e);
             System.exit(1);
@@ -178,9 +215,15 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
 
         EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench(esperEngineName + "-" + taskId);
         EPAdministrator cepAdm = eps.getEPAdministrator();
-        EPStatement cepStatement = cepAdm.createEPL(query);
-        this.esperUpdateListener = new EsperUpdateListener();
-        cepStatement.addListener(this.esperUpdateListener);
+        EPStatement cepStatementRainfall = cepAdm.createEPL(queryRainfall);
+        EPStatement cepStatementVisibility = cepAdm.createEPL(queryVisibility);
+        EPStatement cepStatementSnowfall = cepAdm.createEPL(querySnowfall);
+        this.esperUpdateListenerRainfall = new EsperUpdateListener();
+        this.esperUpdateListenerVisibility = new EsperUpdateListener();
+        this.esperUpdateListenerSnowfall = new EsperUpdateListener();
+        cepStatementRainfall.addListener(this.esperUpdateListenerRainfall);
+        cepStatementSnowfall.addListener(this.esperUpdateListenerSnowfall);
+        cepStatementVisibility.addListener(this.esperUpdateListenerVisibility);
         this.esper = eps.getEPRuntime();
     }
 

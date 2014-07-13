@@ -1,4 +1,4 @@
-package ch.uzh.ddis.thesis.lambda_architecture.speed.bolt.SRBench;
+package ch.uzh.ddis.thesis.lambda_architecture.speed.bolt.debs;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -7,9 +7,9 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
-import ch.uzh.ddis.thesis.lambda_architecture.data.SRBench.SRBenchDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.SimpleTimestamp;
 import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;
+import ch.uzh.ddis.thesis.lambda_architecture.data.debs.DebsDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperFactory;
 import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperUpdateListener;
 import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TimeWindow;
@@ -19,6 +19,7 @@ import com.espertech.esper.client.*;
 import com.espertech.esper.client.time.CurrentTimeEvent;
 import com.google.common.base.Optional;
 import com.google.common.io.Resources;
+import org.apache.commons.math3.stat.StatUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
@@ -35,7 +36,7 @@ import java.util.Map;
 /**
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public class SRBenchQ1Bolt extends BaseRichBolt {
+public class DebsQ1PlugBolt extends BaseRichBolt {
     private static final Logger logger = LogManager.getLogger();
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
@@ -46,9 +47,12 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
 
     private int taskId;
 
-    private static final String esperEngineName = "srbench-q1";
-    private static final String esperQueryPath = "/esper-queries/srbench-q1.esper";
-    private static final long windowSize = 60l * 60l * 1000l; // 1 hour
+    private final long windowSize;
+    private final String taskName;
+
+    private static final String esperEngineName = "debs-q1-plug";
+    private static final String esperQueryPath = "/esper-queries/debs-q1-plug.esper";
+
     private EsperUpdateListener esperUpdateListener;
     private String query;
     private EPRuntime esper;
@@ -65,8 +69,11 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
     private long processCounter = 0;
     private StopWatch processWatch;
 
-    public SRBenchQ1Bolt(String redisHost) {
+    public DebsQ1PlugBolt(String redisHost, long windowSize) {
         this.redisHost = redisHost;
+        this.windowSize = windowSize;
+
+        this.taskName = this.esperEngineName + "-" + this.windowSize + "min";
     }
 
     @Override
@@ -87,7 +94,7 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple input) {
-        SRBenchDataEntry entry = (SRBenchDataEntry) input.getValueByField("data");
+        DebsDataEntry entry = (DebsDataEntry) input.getValueByField("data");
 
         if(!firstTimestampSaved){
             this.redisCache.set(firstTimestampKey, String.valueOf(entry.getTimestamp()));
@@ -95,7 +102,7 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
         }
 
         this.sendTimeEvent(entry.getTimestamp());
-        this.esper.sendEvent(entry.getMap(), entry.getMeasurement());
+        this.esper.sendEvent(entry.getMap(), entry.getType().toString());
 
         if(!this.timeWindow.isInWindow(entry)) {
             this.processNewData();
@@ -118,24 +125,51 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
     }
 
     private void processNewData(){
+
         if(this.esperUpdateListener.hasNewData()){
             Pair<EventBean[], EventBean[]> eventDataTouple = this.esperUpdateListener.getNewData();
             EventBean[] newEvents = eventDataTouple.getValue0();
 
             for(int i = 0; i < newEvents.length; i++){
-                String station = (String) newEvents[i].get("station");
-                String value = String.valueOf(newEvents[i].get("value"));
-                String unit = (String) newEvents[i].get("unit");
+                String houseId = String.valueOf(newEvents[i].get("houseId"));
+                Double load = (Double) newEvents[i].get("load");
+
+                // save into kv-store
+                String key = new StringBuilder().append(this.timeWindow.getWindowStart()).append(houseId).toString();
+                redisCache.set(key, String.valueOf(load));
+
+                // retrieve historical values
+                long times[] = new long[3];
+                long nextPrediction = this.timeWindow.getWindowStart() + (this.windowSize * 2);
+                long oneDay = 24l * 60l * 60l * 1000l;
+                times[0] = (nextPrediction) - (oneDay * 3);
+                times[0] = (nextPrediction) - (oneDay * 2);
+                times[0] = (nextPrediction) - (oneDay * 1);
+
+                double values[] = new double[3];
+                for(int j = 0; j < times.length; j++){
+                    long t = times[j];
+                    try {
+                        String keyT = new StringBuilder().append(t).append(houseId).toString();
+                        Optional<String> optionalValue = Optional.of(this.redisCache.get(keyT));
+                        values[j] = Double.valueOf(optionalValue.get());
+                    }catch (Exception e){
+                        // in case there's no value stored for the given time we use the current value
+                        values[j] = load;
+                    }
+                }
+
+                // calculate the result according to L(s_{i+2}) = ( avgLoad(s_i) + median( { avgLoad(s_j) } ) ) / 2
+                double predictedLoad = (load + StatUtils.percentile(values, 50)) / 2;
 
                 HashMap<String, Object> result = new HashMap<>(1);
-                result.put("station", station);
-                result.put("value", value);
-                result.put("unit", unit);
-                result.put("ts_start", timeWindow.getWindowStart());
-                result.put("ts_end", timeWindow.getWindowEnd());
+                result.put("ts", nextPrediction / 1000);
+                result.put("house_id", houseId);
+                result.put("predicted_load", predictedLoad);
                 result.put("sys_time", System.currentTimeMillis());
+                result.put("data_time", this.timeWindow.getWindowEnd());
 
-                this.outputCollector.emit(new Values(result, esperEngineName, this.taskId));
+                this.outputCollector.emit(new Values(result, taskName, this.taskId));
             }
         }
     }
@@ -171,12 +205,13 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
         URL queryPath = EsperFactory.class.getResource(esperQueryPath);
         try {
             this.query = Resources.toString(queryPath, StandardCharsets.UTF_8);
+            this.query = query.replace("%MINUTES%", String.valueOf(this.windowSize));
         } catch (IOException e){
             logger.error(e);
             System.exit(1);
         }
 
-        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench(esperEngineName + "-" + taskId);
+        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderDebs(esperEngineName + "-" + taskId);
         EPAdministrator cepAdm = eps.getEPAdministrator();
         EPStatement cepStatement = cepAdm.createEPL(query);
         this.esperUpdateListener = new EsperUpdateListener();

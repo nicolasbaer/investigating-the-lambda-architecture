@@ -35,7 +35,7 @@ import java.util.Map;
 /**
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public class SRBenchQ1Bolt extends BaseRichBolt {
+public class SRBenchQ7Bolt extends BaseRichBolt {
     private static final Logger logger = LogManager.getLogger();
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
@@ -46,8 +46,8 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
 
     private int taskId;
 
-    private static final String esperEngineName = "srbench-q1";
-    private static final String esperQueryPath = "/esper-queries/srbench-q1.esper";
+    private static final String esperEngineName = "srbench-q7";
+    private static final String esperQueryPath = "/esper-queries/srbench-q7.esper";
     private static final long windowSize = 60l * 60l * 1000l; // 1 hour
     private EsperUpdateListener esperUpdateListener;
     private String query;
@@ -65,7 +65,7 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
     private long processCounter = 0;
     private StopWatch processWatch;
 
-    public SRBenchQ1Bolt(String redisHost) {
+    public SRBenchQ7Bolt(String redisHost) {
         this.redisHost = redisHost;
     }
 
@@ -123,14 +123,10 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
             EventBean[] newEvents = eventDataTouple.getValue0();
 
             for(int i = 0; i < newEvents.length; i++){
-                String station = (String) newEvents[i].get("station");
-                String value = String.valueOf(newEvents[i].get("value"));
-                String unit = (String) newEvents[i].get("unit");
+                String station = (String) newEvents[i].get("stat");
 
                 HashMap<String, Object> result = new HashMap<>(1);
                 result.put("station", station);
-                result.put("value", value);
-                result.put("unit", unit);
                 result.put("ts_start", timeWindow.getWindowStart());
                 result.put("ts_end", timeWindow.getWindowEnd());
                 result.put("sys_time", System.currentTimeMillis());

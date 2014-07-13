@@ -35,7 +35,7 @@ import java.util.Map;
 /**
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public class SRBenchQ1Bolt extends BaseRichBolt {
+public class SRBenchQ2Bolt extends BaseRichBolt {
     private static final Logger logger = LogManager.getLogger();
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
@@ -46,8 +46,8 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
 
     private int taskId;
 
-    private static final String esperEngineName = "srbench-q1";
-    private static final String esperQueryPath = "/esper-queries/srbench-q1.esper";
+    private static final String esperEngineName = "srbench-q2";
+    private static final String esperQueryPath = "/esper-queries/srbench-q2.esper";
     private static final long windowSize = 60l * 60l * 1000l; // 1 hour
     private EsperUpdateListener esperUpdateListener;
     private String query;
@@ -65,7 +65,7 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
     private long processCounter = 0;
     private StopWatch processWatch;
 
-    public SRBenchQ1Bolt(String redisHost) {
+    public SRBenchQ2Bolt(String redisHost) {
         this.redisHost = redisHost;
     }
 

@@ -16,18 +16,20 @@ public class NettyHeartbeat implements Runnable{
     private final static long heartBeatRate = 500;
 
     private final NettyClient client;
+    private final NettyQueue nettyQueue;
 
     private boolean finish = false;
 
-    public NettyHeartbeat(NettyClient client) {
+    public NettyHeartbeat(NettyClient client, NettyQueue nettyQueue) {
         this.client = client;
+        this.nettyQueue = nettyQueue;
     }
 
     @Override
     public void run() {
         while(!finish){
             long lastData = this.client.getLastDataReceived();
-            if(lastData != 0 && (System.currentTimeMillis() - lastData) > heartBeatRate && this.client.getQueue().isEmpty()){
+            if(lastData != 0 && (System.currentTimeMillis() - lastData) > heartBeatRate && this.nettyQueue.queue.isEmpty()){
                 if(this.client.getChannel().isActive()){
                     this.client.getChannel().writeAndFlush("next");
                     logger.info(remoteDebug, "topic=nettyHeartbeat lastData={}", lastData);

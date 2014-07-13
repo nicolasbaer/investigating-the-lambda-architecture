@@ -12,8 +12,8 @@ import ch.uzh.ddis.thesis.lambda_architecture.data.SimpleTimestamp;
 import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;
 import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperFactory;
 import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperUpdateListener;
+import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.SlidingWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TimeWindow;
-import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TumblingWindow;
 import com.ecyrd.speed4j.StopWatch;
 import com.espertech.esper.client.*;
 import com.espertech.esper.client.time.CurrentTimeEvent;
@@ -35,7 +35,7 @@ import java.util.Map;
 /**
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
-public class SRBenchQ1Bolt extends BaseRichBolt {
+public class SRBenchQ4Bolt extends BaseRichBolt {
     private static final Logger logger = LogManager.getLogger();
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
@@ -46,9 +46,10 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
 
     private int taskId;
 
-    private static final String esperEngineName = "srbench-q1";
-    private static final String esperQueryPath = "/esper-queries/srbench-q1.esper";
+    private static final String esperEngineName = "srbench-q4";
+    private static final String esperQueryPath = "/esper-queries/srbench-q4.esper";
     private static final long windowSize = 60l * 60l * 1000l; // 1 hour
+    private static final long windowStep = 10l * 1000l; // 10 minutes
     private EsperUpdateListener esperUpdateListener;
     private String query;
     private EPRuntime esper;
@@ -65,7 +66,7 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
     private long processCounter = 0;
     private StopWatch processWatch;
 
-    public SRBenchQ1Bolt(String redisHost) {
+    public SRBenchQ4Bolt(String redisHost) {
         this.redisHost = redisHost;
     }
 
@@ -79,7 +80,7 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
 
         this.redisCache = new Jedis(redisHost);
 
-        this.timeWindow = new TumblingWindow<>(windowSize);
+        this.timeWindow = new SlidingWindow<>(windowSize, windowStep);
         this.initEsper();
 
         this.restoreTimewindow();
@@ -124,13 +125,13 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
 
             for(int i = 0; i < newEvents.length; i++){
                 String station = (String) newEvents[i].get("station");
-                String value = String.valueOf(newEvents[i].get("value"));
-                String unit = (String) newEvents[i].get("unit");
+                Double speed = (Double) newEvents[i].get("speed");
+                Double temperature = (Double) newEvents[i].get("temperature");
 
                 HashMap<String, Object> result = new HashMap<>(1);
                 result.put("station", station);
-                result.put("value", value);
-                result.put("unit", unit);
+                result.put("speed", speed);
+                result.put("temperature", temperature);
                 result.put("ts_start", timeWindow.getWindowStart());
                 result.put("ts_end", timeWindow.getWindowEnd());
                 result.put("sys_time", System.currentTimeMillis());

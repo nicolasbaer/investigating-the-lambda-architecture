@@ -8,7 +8,10 @@ import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
 import ch.uzh.ddis.thesis.lambda_architecture.data.Dataset;
 import ch.uzh.ddis.thesis.lambda_architecture.speed.bolt.ResultBolt;
-import ch.uzh.ddis.thesis.lambda_architecture.speed.bolt.SRBench.SRBenchQ1Bolt;
+import ch.uzh.ddis.thesis.lambda_architecture.speed.bolt.SRBench.*;
+import ch.uzh.ddis.thesis.lambda_architecture.speed.bolt.debs.DebsQ1HouseBolt;
+import ch.uzh.ddis.thesis.lambda_architecture.speed.bolt.debs.DebsQ1PlugBolt;
+import ch.uzh.ddis.thesis.lambda_architecture.speed.grouping.PartitionGrouping;
 import ch.uzh.ddis.thesis.lambda_architecture.speed.spout.NettySpout;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -29,6 +32,9 @@ public class TopologyHelper {
 
     @Parameter(names = "-dataset", description = "dataset to work on `srbench` or `debs`", required = true)
     public String dataset;
+
+    @Parameter(names = "-minutes", description = "minutes for debs dataset", required = false)
+    public long minutes = 120;
 
 
     /**
@@ -61,9 +67,27 @@ public class TopologyHelper {
 
         System.out.println(this.question);
         if(this.question.equals("srbench-q1")){
-            builder.setBolt(this.question, new SRBenchQ1Bolt(redisHost), partitions).fieldsGrouping("netty", new Fields("partition"));
+            builder.setBolt(this.question, new SRBenchQ1Bolt(redisHost), partitions).customGrouping("netty", new PartitionGrouping());
+        } else if(this.question.equals("srbench-q2")){
+            builder.setBolt(this.question, new SRBenchQ2Bolt(redisHost), partitions).customGrouping("netty", new PartitionGrouping());
+        } else if(this.question.equals("srbench-q3")){
+            builder.setBolt(this.question, new SRBenchQ3Bolt(redisHost), partitions).customGrouping("netty", new PartitionGrouping());
+        } else if(this.question.equals("srbench-q4")){
+            builder.setBolt(this.question, new SRBenchQ4Bolt(redisHost), partitions).customGrouping("netty", new PartitionGrouping());
+        } else if(this.question.equals("srbench-q5")){
+            builder.setBolt(this.question, new SRBenchQ5Bolt(redisHost), partitions).customGrouping("netty", new PartitionGrouping());
+        } else if(this.question.equals("srbench-q6")){
+            builder.setBolt(this.question, new SRBenchQ6Bolt(redisHost), partitions).customGrouping("netty", new PartitionGrouping());
+        } else if(this.question.equals("srbench-q7")){
+            builder.setBolt(this.question, new SRBenchQ7Bolt(redisHost), partitions).customGrouping("netty", new PartitionGrouping());
+        } else if(this.question.equals("debs-q1-house")){
+            builder.setBolt(this.question, new DebsQ1HouseBolt(redisHost, minutes), partitions).customGrouping("netty", new PartitionGrouping());
+        } else if(this.question.equals("debs-q1-plug")){
+            builder.setBolt(this.question, new DebsQ1PlugBolt(redisHost, minutes), partitions).customGrouping("netty", new PartitionGrouping());
+        } else{
+            System.out.println("Could not find any routine for the given question `" + question + "`");
+            System.exit(1);
         }
-
 
         builder.setBolt("result", new ResultBolt(mongoDbHost, mongoDbPort, mongoDbName), partitions).fieldsGrouping(this.question, new Fields("partition"));
 
