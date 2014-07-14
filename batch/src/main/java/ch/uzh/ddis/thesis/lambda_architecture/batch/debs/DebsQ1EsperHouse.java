@@ -164,6 +164,10 @@ public final class DebsQ1EsperHouse implements StreamTask, InitableTask, Windowa
                 String houseId = String.valueOf(newEvents[i].get("houseId"));
                 Double load = (Double) newEvents[i].get("load");
 
+                if(load == null){
+                    return;
+                }
+
                 // save into kv-store
                 String key = new StringBuilder().append(this.timeWindow.getWindowStart()).append(houseId).toString();
                 historyStore.put(key, load);

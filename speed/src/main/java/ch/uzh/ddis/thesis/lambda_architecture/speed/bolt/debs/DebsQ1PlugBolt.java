@@ -132,7 +132,13 @@ public class DebsQ1PlugBolt extends BaseRichBolt {
 
             for(int i = 0; i < newEvents.length; i++){
                 String houseId = String.valueOf(newEvents[i].get("houseId"));
+                String householdId = String.valueOf(newEvents[i].get("householdId"));
+                String plugId = String.valueOf(newEvents[i].get("plugId"));
                 Double load = (Double) newEvents[i].get("load");
+
+                if(load == null){
+                    return;
+                }
 
                 // save into kv-store
                 String key = new StringBuilder().append(this.timeWindow.getWindowStart()).append(houseId).toString();
@@ -165,6 +171,8 @@ public class DebsQ1PlugBolt extends BaseRichBolt {
                 HashMap<String, Object> result = new HashMap<>(1);
                 result.put("ts", nextPrediction / 1000);
                 result.put("house_id", houseId);
+                result.put("household_id", householdId);
+                result.put("plug_id", plugId);
                 result.put("predicted_load", predictedLoad);
                 result.put("sys_time", System.currentTimeMillis());
                 result.put("data_time", this.timeWindow.getWindowEnd());

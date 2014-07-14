@@ -167,6 +167,10 @@ public final class DebsQ1EsperPlug implements StreamTask, InitableTask, Windowab
                 String plugId = String.valueOf(newEvents[i].get("plugId"));
                 Double load = (Double) newEvents[i].get("load");
 
+                if(load == null){
+                    return;
+                }
+
                 // save into kv-store
                 StringBuilder keyTail = new StringBuilder().append(houseId).append("-").append(householdId).append("-").append(plugId);
                 String key = new StringBuilder().append(this.timeWindow.getWindowStart()).append(keyTail).toString();
