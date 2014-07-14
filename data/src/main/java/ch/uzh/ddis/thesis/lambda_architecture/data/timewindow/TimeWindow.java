@@ -17,6 +17,9 @@ public interface TimeWindow<E extends Timestamped> {
     public long getWindowStart();
 
 
+    public E getWindowStartEvent();
+
+
     public long getWindowEnd();
 
 

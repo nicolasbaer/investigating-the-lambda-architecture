@@ -15,6 +15,8 @@ public class SlidingWindow<E extends Timestamped> implements TimeWindow<E>{
     private long currentWindowStart = 0;
     private long currentWindowEnd = 0;
 
+    private E startEvent;
+
     /**
      * Initializes a sliding window with the given size and range.
      * For example a sliding window of 10ms every 2ms would mean: sizeMs=10, rangeMs=2
@@ -28,6 +30,18 @@ public class SlidingWindow<E extends Timestamped> implements TimeWindow<E>{
 
     @Override
     public void addEvent(E message) {
+        if(this.startEvent == null){
+            this.startEvent = message;
+            this.resetWindow(message.getTimestamp());
+
+            return;
+        }
+
+        long startDiff = message.getTimestamp() - this.startEvent.getTimestamp();
+        if(startDiff >= this.rangeMs){
+            this.startEvent = message;
+        }
+
         if(message.getTimestamp() > currentWindowEnd){
             // find out how many ranges to jump
             int diff = (int) Math.ceil((message.getTimestamp() - currentWindowEnd) / new Double(rangeMs));
@@ -58,5 +72,11 @@ public class SlidingWindow<E extends Timestamped> implements TimeWindow<E>{
     private void resetWindow(long start){
         this.currentWindowStart = start;
         this.currentWindowEnd = start + (sizeMs -1);
+    }
+
+
+    @Override
+    public E getWindowStartEvent() {
+        return this.startEvent;
     }
 }

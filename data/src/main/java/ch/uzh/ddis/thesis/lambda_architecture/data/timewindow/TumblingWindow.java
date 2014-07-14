@@ -14,6 +14,8 @@ public final class TumblingWindow<E extends Timestamped> implements TimeWindow<E
     private long currentWindowStart = 0;
     private long currentWindowEnd = 0;
 
+    private E startEvent;
+
     /**
      * @param sizeMs size of the tumbling widow in milliseconds
      */
@@ -25,6 +27,7 @@ public final class TumblingWindow<E extends Timestamped> implements TimeWindow<E
     public void addEvent(E message) {
         if (message.getTimestamp() > currentWindowEnd) {
             resetWindow(message.getTimestamp());
+            this.startEvent = message;
         }
     }
 
@@ -54,4 +57,9 @@ public final class TumblingWindow<E extends Timestamped> implements TimeWindow<E
         this.currentWindowEnd = start + (sizeMs -1);
     }
 
+
+    @Override
+    public E getWindowStartEvent() {
+        return this.startEvent;
+    }
 }
