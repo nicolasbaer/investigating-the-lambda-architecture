@@ -30,11 +30,6 @@
             <artifactId>storm-core</artifactId>
             <version>${storm-version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.storm</groupId>
-            <artifactId>storm-kafka</artifactId>
-            <version>${storm-version}</version>
-        </dependency>
 
         <!-- persistency -->
         <dependency>
