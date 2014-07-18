@@ -63,13 +63,9 @@ public class NettyProducer extends ChannelInboundHandlerAdapter implements IProd
     }
 
     private void closeSocket(){
-        try {
-            this.channelFuture.channel().closeFuture().sync();
-            this.workerGroup.shutdownGracefully();
-            this.bossGroup.shutdownGracefully();
-        } catch (InterruptedException e) {
-            logger.error(e);
-        }
+        this.channelFuture.channel().closeFuture();
+        this.workerGroup.shutdownGracefully();
+        this.bossGroup.shutdownGracefully();
     }
 
     @Override

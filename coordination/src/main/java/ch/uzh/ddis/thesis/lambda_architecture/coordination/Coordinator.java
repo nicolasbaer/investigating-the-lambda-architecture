@@ -108,7 +108,10 @@ public class Coordinator {
             Iterator<Quintet<CSVAdaptor, Disruptor<IDataEntry>, RingBuffer<IDataEntry>, IProducer, SystemTimeSynchronizer>> it = threads.iterator();
             while(it.hasNext()){
                 Quintet<CSVAdaptor, Disruptor<IDataEntry>, RingBuffer<IDataEntry>, IProducer, SystemTimeSynchronizer> thread = it.next();
-                if(thread.getValue0().isFinished() && thread.getValue2().getCursor() == thread.getValue4().getCurrentSequence()){
+                boolean isFinished = thread.getValue0().isFinished();
+                long cursor = thread.getValue2().getCursor();
+                long currentSequence = thread.getValue4().getCurrentSequence();
+                if(isFinished && cursor == currentSequence){
                     thread.getValue3().close();
                     thread.getValue1().halt();
 
