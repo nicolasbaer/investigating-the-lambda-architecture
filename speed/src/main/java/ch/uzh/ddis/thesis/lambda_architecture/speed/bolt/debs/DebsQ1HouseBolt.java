@@ -70,7 +70,6 @@ public class DebsQ1HouseBolt extends BaseRichBolt {
     private long processCounter = 0;
     private StopWatch processWatch;
 
-
     public DebsQ1HouseBolt(String redisHost, long windowSizeMinutes) {
         this.redisHost = redisHost;
         this.windowSizeMinutes = windowSizeMinutes;
@@ -112,6 +111,8 @@ public class DebsQ1HouseBolt extends BaseRichBolt {
         }
 
         this.timeWindow.addEvent(entry);
+
+        this.outputCollector.ack(input);
 
         if(this.processCounter == 0){
             this.processWatch = new StopWatch();

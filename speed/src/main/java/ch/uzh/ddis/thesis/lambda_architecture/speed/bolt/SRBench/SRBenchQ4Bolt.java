@@ -104,6 +104,8 @@ public class SRBenchQ4Bolt extends BaseRichBolt {
 
         this.timeWindow.addEvent(entry);
 
+        this.outputCollector.ack(input);
+
         if(this.processCounter == 0){
             this.processWatch = new StopWatch();
         }

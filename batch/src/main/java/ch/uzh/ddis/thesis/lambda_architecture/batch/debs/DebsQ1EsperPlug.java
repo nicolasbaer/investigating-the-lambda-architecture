@@ -7,6 +7,7 @@ import ch.uzh.ddis.thesis.lambda_architecture.data.SimpleTimestamp;
 import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;
 import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperFactory;
 import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperUpdateListener;
+import ch.uzh.ddis.thesis.lambda_architecture.shutdown_handler.ShutdownHandler;
 import com.ecyrd.speed4j.StopWatch;
 import com.espertech.esper.client.*;
 import com.espertech.esper.client.time.CurrentTimeEvent;
@@ -152,6 +153,8 @@ public final class DebsQ1EsperPlug implements StreamTask, InitableTask, Windowab
             logger.info(performance, "topic=samzashutdown uuid={} lastData={}", uuid, lastDataReceived);
 
             taskCoordinator.shutdown(TaskCoordinator.RequestScope.CURRENT_TASK);
+
+            ShutdownHandler.handleShutdown("layer=batch");
         }
     }
 

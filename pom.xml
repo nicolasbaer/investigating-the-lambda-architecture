@@ -29,6 +29,7 @@
         <module>utils</module>
         <module>speed</module>
         <module>partitioner</module>
+        <module>shutdown_handler</module>
     </modules>
 
     <properties>

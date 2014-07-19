@@ -5,6 +5,7 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.util.CharsetUtil;
@@ -14,6 +15,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 public class NettyProducerTest {
     private static final Logger logger = LogManager.getLogger();
@@ -41,6 +44,7 @@ public class NettyProducerTest {
             b.handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 public void initChannel(SocketChannel ch) throws Exception {
+                    ch.pipeline().addLast("frameDecoder", new LineBasedFrameDecoder(5000));
                     ch.pipeline().addLast(new StringDecoder(CharsetUtil.UTF_8));
                     ch.pipeline().addLast(client);
                     ch.pipeline().addLast(new StringEncoder(CharsetUtil.UTF_8));
@@ -55,8 +59,8 @@ public class NettyProducerTest {
 
             client.channel.writeAndFlush("1");
 
-            f.channel().closeFuture().sync();
         } finally {
+            workerGroup.awaitTermination(1, TimeUnit.SECONDS);
             workerGroup.shutdownGracefully();
         }
 
@@ -84,9 +88,11 @@ public class NettyProducerTest {
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
             logger.debug("received response");
-            String[] messages = String.valueOf(msg).split("\\n");
+            String[] messages = String.valueOf(msg).split(Pattern.quote("$"));
             for(String message : messages){
-                received.add(message);
+                if(!message.equals("")) {
+                    received.add(message);
+                }
             }
             logger.debug("sending new request");
             ctx.channel().writeAndFlush("get new");
