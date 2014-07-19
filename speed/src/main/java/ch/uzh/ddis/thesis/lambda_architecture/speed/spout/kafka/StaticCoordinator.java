@@ -17,6 +17,9 @@
  */
 package ch.uzh.ddis.thesis.lambda_architecture.speed.spout.kafka;
 
+import ch.uzh.ddis.thesis.lambda_architecture.data.IDataFactory;
+import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TimeWindow;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,11 +30,11 @@ public class StaticCoordinator implements PartitionCoordinator {
     Map<Partition, PartitionManager> _managers = new HashMap<Partition, PartitionManager>();
     List<PartitionManager> _allManagers = new ArrayList();
 
-    public StaticCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig config, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId) {
+    public StaticCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig config, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId, TimeWindow<TimestampedOffset> timeWindow, IDataFactory factory) {
         StaticHosts hosts = (StaticHosts) config.hosts;
         List<Partition> myPartitions = KafkaUtils.calculatePartitionsForTask(hosts.getPartitionInformation(), totalTasks, taskIndex);
         for (Partition myPartition : myPartitions) {
-            _managers.put(myPartition, new PartitionManager(connections, topologyInstanceId, state, stormConf, config, myPartition));
+            _managers.put(myPartition, new PartitionManager(connections, topologyInstanceId, state, stormConf, config, myPartition, timeWindow, factory));
         }
         _allManagers = new ArrayList(_managers.values());
     }

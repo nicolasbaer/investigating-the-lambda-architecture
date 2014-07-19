@@ -10,6 +10,8 @@ import org.apache.logging.log4j.MarkerManager;
 
 import java.io.Serializable;
 import java.util.UUID;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 /**
@@ -27,18 +29,23 @@ public class NettyClient extends ChannelInboundHandlerAdapter implements Seriali
     private static final int max_buffer = 5000;
 
     private final NettyQueue nettyQueue;
+    private final Executor executor;
+    private NettyHeartbeat heartbeat;
 
     private long lastDataReceived = 0;
     private Channel channel;
 
     public NettyClient(NettyQueue queue) {
         this.nettyQueue = queue;
+
+        executor = Executors.newCachedThreadPool();
     }
 
 
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+
         this.lastDataReceived = System.currentTimeMillis();
 
         String[] lines = String.valueOf(msg).split(Pattern.quote("$"));
@@ -54,6 +61,7 @@ public class NettyClient extends ChannelInboundHandlerAdapter implements Seriali
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        logger.warn("channel active");
         super.channelActive(ctx);
 
         this.channel = ctx.channel();
@@ -61,19 +69,28 @@ public class NettyClient extends ChannelInboundHandlerAdapter implements Seriali
         // initiate data transfer
         this.channel.writeAndFlush("next");
 
+
+        this.heartbeat = new NettyHeartbeat(this, nettyQueue);
+        executor.execute(this.heartbeat);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
-        logger.debug("channel inactive...");
+        logger.warn("channel inactive...");
+
+        this.heartbeat.setFinish(true);
+
+        channel.close();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         super.exceptionCaught(ctx, cause);
-        logger.error(cause);
+        logger.warn(cause);
     }
+
+
 
 
 

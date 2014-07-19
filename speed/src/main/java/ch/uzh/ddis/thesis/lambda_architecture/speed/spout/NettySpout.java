@@ -8,6 +8,7 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
 import ch.uzh.ddis.thesis.lambda_architecture.data.IDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.IDataFactory;
+import ch.uzh.ddis.thesis.lambda_architecture.shutdown_handler.ShutdownHandler;
 import com.google.common.base.Optional;
 import com.google.common.net.HostAndPort;
 import io.netty.bootstrap.Bootstrap;
@@ -36,6 +37,10 @@ public class NettySpout extends BaseRichSpout {
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
 
+    private static final int maxConnectionRetry = 50;
+    private static final int maxChannelRetry = 5000;
+    private static final long shutdownWaitThreshold = 5 * 60 * 1000;
+
     private final ArrayList<HostAndPort> hosts;
     private final IDataFactory dataFactory;
 
@@ -50,6 +55,11 @@ public class NettySpout extends BaseRichSpout {
 
     private final NettyQueue nettyQueue = new NettyQueue();
 
+
+    private int connectionFailedCounter=0;
+    private int channelFailedCounter=0;
+
+    private long lastDataEmitted = 0;
 
     public NettySpout(ArrayList<HostAndPort> hosts, IDataFactory dataFactory) {
         this.hosts = hosts;
@@ -96,24 +106,56 @@ public class NettySpout extends BaseRichSpout {
             this.channelFuture.addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                    if (!finished && !channelFuture.isSuccess() && !channelFuture.channel().isOpen()) {
+                    logger.warn("1. channel was closed: finished={}, success={}, open={}", finished, channelFuture.isSuccess(), channelFuture.channel().isOpen());
+                    if (!finished && !channelFuture.channel().isOpen()) {
                         channelFuture.channel().eventLoop().schedule(new Runnable() {
                             @Override
                             public void run() {
-                                connect();
+                                channelFailedCounter++;
+                                if(channelFailedCounter <= maxChannelRetry) {
+                                    logger.warn("connection lost to netty producer, reconnecting");
+                                    connect();
+                                }
                             }
                         }, 10, TimeUnit.MILLISECONDS);
                     }
                 }
             });
-
+            this.channelFuture.channel().closeFuture().addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                    logger.warn("channel was closed: finished={}, success={}, open={}", finished, channelFuture.isSuccess(), channelFuture.channel().isOpen());
+                    if (!finished && !channelFuture.channel().isOpen()) {
+                        channelFuture.channel().eventLoop().schedule(new Runnable() {
+                            @Override
+                            public void run() {
+                                channelFailedCounter++;
+                                if(channelFailedCounter <= maxChannelRetry) {
+                                    logger.warn("connection lost to netty producer, reconnecting");
+                                    connect();
+                                }
+                            }
+                        }, 10, TimeUnit.MILLISECONDS);
+                    }
+                }
+            });
         } catch (InterruptedException e){
             logger.error(e);
+        } catch (Exception e){
+            this.connectionFailedCounter++;
+            if((this.connectionFailedCounter < maxConnectionRetry) || (this.channelFailedCounter > 0 && this.connectionFailedCounter > maxConnectionRetry/2)){
+                logger.warn("connection failed to netty producer, trying to connect again.");
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException ie){
+                    logger.error(ie);
+                }
+
+                connect();
+            }
         }
 
     }
-
-    private long lastTs = 0;
 
     @Override
     public void nextTuple() {
@@ -121,12 +163,13 @@ public class NettySpout extends BaseRichSpout {
         if(optionalData.isPresent()) {
             IDataEntry data = this.dataFactory.makeDataEntryFromCSV(optionalData.get());
             this.outputCollector.emit(new Values(data, data.getPartitionKey()));
-            if(lastTs!=0){
-                if(data.getTimestamp() < lastTs){
-                    logger.info(remoteDebug, "topic=spoutTimeIssue lastTs={} currentTs={}", lastTs, data.getTimestamp());
-                }
+
+            this.lastDataEmitted = System.currentTimeMillis();
+        } else{
+            if(lastDataEmitted != 0 && System.currentTimeMillis() - lastDataEmitted > shutdownWaitThreshold){
+                ShutdownHandler.handleShutdown("layer=speed");
+                this.close();
             }
-            lastTs = data.getTimestamp();
         }
     }
 
@@ -139,7 +182,7 @@ public class NettySpout extends BaseRichSpout {
         try {
             this.channelFuture.channel().closeFuture().sync();
             this.workerGroup.shutdownGracefully();
-        } catch (InterruptedException e){
+        } catch (InterruptedException | NullPointerException e){
             logger.error(e);
         }
     }
