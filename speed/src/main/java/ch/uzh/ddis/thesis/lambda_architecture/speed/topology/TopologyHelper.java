@@ -95,6 +95,16 @@ public class TopologyHelper {
         conf.setNumWorkers(numWorkers);
 
         StormSubmitter.submitTopology(this.question + "-topology", conf, builder.createTopology());
+
+        System.out.println("Waiting 5s before shutdown...");
+        try {
+            Thread.sleep(5000);
+        }catch (InterruptedException e){
+            e.printStackTrace();
+        }
+
+        System.exit(0);
+
     }
 
     private ArrayList<HostAndPort> parseHosts(String hostList){
