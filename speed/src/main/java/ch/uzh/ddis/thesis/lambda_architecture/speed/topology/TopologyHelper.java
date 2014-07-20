@@ -10,7 +10,6 @@ import ch.uzh.ddis.thesis.lambda_architecture.data.Dataset;
 import ch.uzh.ddis.thesis.lambda_architecture.speed.bolt.ResultBolt;
 import ch.uzh.ddis.thesis.lambda_architecture.speed.bolt.SRBench.*;
 import ch.uzh.ddis.thesis.lambda_architecture.speed.bolt.debs.DebsQ1HouseBolt;
-import ch.uzh.ddis.thesis.lambda_architecture.speed.bolt.debs.DebsQ1PlugBolt;
 import ch.uzh.ddis.thesis.lambda_architecture.speed.grouping.PartitionGrouping;
 import ch.uzh.ddis.thesis.lambda_architecture.speed.spout.NettySpout;
 import com.beust.jcommander.JCommander;
@@ -32,10 +31,6 @@ public class TopologyHelper {
 
     @Parameter(names = "-dataset", description = "dataset to work on `srbench` or `debs`", required = true)
     public String dataset;
-
-    @Parameter(names = "-minutes", description = "minutes for debs dataset", required = false)
-    public long minutes = 120;
-
 
     /**
      * Starts the topology based on the given cli arguments and properties in the property file.
@@ -65,7 +60,6 @@ public class TopologyHelper {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("netty", new NettySpout(hosts, Dataset.valueOf(this.dataset).getFactory()), hosts.size());
 
-        System.out.println(this.question);
         if(this.question.equals("srbench-q1")){
             builder.setBolt(this.question, new SRBenchQ1Bolt(redisHost), partitions).customGrouping("netty", new PartitionGrouping());
         } else if(this.question.equals("srbench-q2")){
@@ -78,12 +72,28 @@ public class TopologyHelper {
             builder.setBolt(this.question, new SRBenchQ5Bolt(redisHost), partitions).customGrouping("netty", new PartitionGrouping());
         } else if(this.question.equals("srbench-q6")){
             builder.setBolt(this.question, new SRBenchQ6Bolt(redisHost), partitions).customGrouping("netty", new PartitionGrouping());
-        } else if(this.question.equals("srbench-q7")){
+        } else if(this.question.equals("srbench-q7")) {
             builder.setBolt(this.question, new SRBenchQ7Bolt(redisHost), partitions).customGrouping("netty", new PartitionGrouping());
-        } else if(this.question.equals("debs-q1-house")){
-            builder.setBolt(this.question, new DebsQ1HouseBolt(redisHost, minutes), partitions).customGrouping("netty", new PartitionGrouping());
-        } else if(this.question.equals("debs-q1-plug")){
-            builder.setBolt(this.question, new DebsQ1PlugBolt(redisHost, minutes), partitions).customGrouping("netty", new PartitionGrouping());
+        } else if(this.question.equals("debs-q1-house-1min")){
+            builder.setBolt(this.question, new DebsQ1HouseBolt(redisHost, 1l), partitions).customGrouping("netty", new PartitionGrouping());
+        }  else if(this.question.equals("debs-q1-house-5min")){
+            builder.setBolt(this.question, new DebsQ1HouseBolt(redisHost, 5l), partitions).customGrouping("netty", new PartitionGrouping());
+        }  else if(this.question.equals("debs-q1-house-15min")){
+            builder.setBolt(this.question, new DebsQ1HouseBolt(redisHost, 15l), partitions).customGrouping("netty", new PartitionGrouping());
+        }  else if(this.question.equals("debs-q1-house-60min")){
+            builder.setBolt(this.question, new DebsQ1HouseBolt(redisHost, 60l), partitions).customGrouping("netty", new PartitionGrouping());
+        }  else if(this.question.equals("debs-q1-house-120min")){
+            builder.setBolt(this.question, new DebsQ1HouseBolt(redisHost, 120l), partitions).customGrouping("netty", new PartitionGrouping());
+        } else if(this.question.equals("debs-q1-plug-1min")){
+            builder.setBolt(this.question, new DebsQ1HouseBolt(redisHost, 1l), partitions).customGrouping("netty", new PartitionGrouping());
+        }  else if(this.question.equals("debs-q1-plug-5min")){
+            builder.setBolt(this.question, new DebsQ1HouseBolt(redisHost, 5l), partitions).customGrouping("netty", new PartitionGrouping());
+        }  else if(this.question.equals("debs-q1-plug-15min")){
+            builder.setBolt(this.question, new DebsQ1HouseBolt(redisHost, 15l), partitions).customGrouping("netty", new PartitionGrouping());
+        }  else if(this.question.equals("debs-q1-plug-60min")){
+            builder.setBolt(this.question, new DebsQ1HouseBolt(redisHost, 60l), partitions).customGrouping("netty", new PartitionGrouping());
+        }  else if(this.question.equals("debs-q1-plug-120min")){
+            builder.setBolt(this.question, new DebsQ1HouseBolt(redisHost, 120l), partitions).customGrouping("netty", new PartitionGrouping());
         } else{
             System.out.println("Could not find any routine for the given question `" + question + "`");
             System.exit(1);

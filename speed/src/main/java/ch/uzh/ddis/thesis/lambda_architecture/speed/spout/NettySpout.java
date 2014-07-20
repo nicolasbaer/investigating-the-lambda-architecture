@@ -60,6 +60,7 @@ public class NettySpout extends BaseRichSpout {
     private int channelFailedCounter=0;
 
     private long lastDataEmitted = 0;
+    private boolean stopped = false;
 
     public NettySpout(ArrayList<HostAndPort> hosts, IDataFactory dataFactory) {
         this.hosts = hosts;
@@ -85,7 +86,7 @@ public class NettySpout extends BaseRichSpout {
     }
 
     private void connect(){
-        HostAndPort host = this.hosts.get(context.getThisTaskIndex());
+        final HostAndPort host = this.hosts.get(context.getThisTaskIndex());
 
         Bootstrap b = new Bootstrap();
         b.group(workerGroup);
@@ -113,7 +114,7 @@ public class NettySpout extends BaseRichSpout {
                             public void run() {
                                 channelFailedCounter++;
                                 if(channelFailedCounter <= maxChannelRetry) {
-                                    logger.warn("connection lost to netty producer, reconnecting");
+                                    logger.warn("connection lost to netty producer, reconnecting (host={})", host.toString());
                                     connect();
                                 }
                             }
@@ -131,7 +132,7 @@ public class NettySpout extends BaseRichSpout {
                             public void run() {
                                 channelFailedCounter++;
                                 if(channelFailedCounter <= maxChannelRetry) {
-                                    logger.warn("connection lost to netty producer, reconnecting");
+                                    logger.warn("connection lost to netty producer, reconnecting (host={})", host.toString());
                                     connect();
                                 }
                             }
@@ -144,7 +145,7 @@ public class NettySpout extends BaseRichSpout {
         } catch (Exception e){
             this.connectionFailedCounter++;
             if((this.connectionFailedCounter < maxConnectionRetry) || (this.channelFailedCounter > 0 && this.connectionFailedCounter > maxConnectionRetry/2)){
-                logger.warn("connection failed to netty producer, trying to connect again.");
+                logger.warn("connection failed to netty producer, trying to connect again. (host={})", host.toString());
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException ie){
@@ -166,9 +167,10 @@ public class NettySpout extends BaseRichSpout {
 
             this.lastDataEmitted = System.currentTimeMillis();
         } else{
-            if(lastDataEmitted != 0 && System.currentTimeMillis() - lastDataEmitted > shutdownWaitThreshold){
+            if(!stopped && lastDataEmitted != 0 && System.currentTimeMillis() - lastDataEmitted > shutdownWaitThreshold){
                 ShutdownHandler.handleShutdown("layer=speed");
                 this.close();
+                this.stopped = true;
             }
         }
     }
@@ -180,9 +182,9 @@ public class NettySpout extends BaseRichSpout {
         this.finished = true;
 
         try {
-            this.channelFuture.channel().closeFuture().sync();
+            this.channelFuture.channel().closeFuture();
             this.workerGroup.shutdownGracefully();
-        } catch (InterruptedException | NullPointerException e){
+        } catch (NullPointerException e){
             logger.error(e);
         }
     }

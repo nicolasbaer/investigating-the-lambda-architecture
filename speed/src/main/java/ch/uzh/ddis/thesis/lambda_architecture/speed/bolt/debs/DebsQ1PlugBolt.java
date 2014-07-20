@@ -47,6 +47,7 @@ public class DebsQ1PlugBolt extends BaseRichBolt {
 
     private int taskId;
 
+    private final long windowSizeMinutes;
     private final long windowSize;
     private final String taskName;
 
@@ -69,11 +70,12 @@ public class DebsQ1PlugBolt extends BaseRichBolt {
     private long processCounter = 0;
     private StopWatch processWatch;
 
-    public DebsQ1PlugBolt(String redisHost, long windowSize) {
+    public DebsQ1PlugBolt(String redisHost, long windowSizeMinutes) {
         this.redisHost = redisHost;
-        this.windowSize = windowSize;
+        this.windowSizeMinutes = windowSizeMinutes;
+        this.windowSize = windowSizeMinutes * 60 * 1000;
 
-        this.taskName = this.esperEngineName + "-" + this.windowSize + "min";
+        this.taskName = this.esperEngineName + "-" + this.windowSizeMinutes + "min";
     }
 
     @Override
@@ -139,11 +141,17 @@ public class DebsQ1PlugBolt extends BaseRichBolt {
                 Double load = (Double) newEvents[i].get("load");
 
                 if(load == null){
-                    return;
+                    continue;
                 }
 
                 // save into kv-store
-                String key = new StringBuilder().append(this.timeWindow.getWindowStart()).append(houseId).toString();
+                StringBuilder keyEnd = new StringBuilder().append("-").append(houseId)
+                        .append("-")
+                        .append(householdId)
+                        .append("-")
+                        .append(plugId);
+
+                String key = new StringBuilder().append(this.timeWindow.getWindowStart()).append(keyEnd).toString();
                 redisCache.set(key, String.valueOf(load));
 
                 // retrieve historical values
@@ -151,14 +159,14 @@ public class DebsQ1PlugBolt extends BaseRichBolt {
                 long nextPrediction = this.timeWindow.getWindowStart() + (this.windowSize * 2);
                 long oneDay = 24l * 60l * 60l * 1000l;
                 times[0] = (nextPrediction) - (oneDay * 3);
-                times[0] = (nextPrediction) - (oneDay * 2);
-                times[0] = (nextPrediction) - (oneDay * 1);
+                times[1] = (nextPrediction) - (oneDay * 2);
+                times[2] = (nextPrediction) - (oneDay * 1);
 
                 double values[] = new double[3];
                 for(int j = 0; j < times.length; j++){
                     long t = times[j];
                     try {
-                        String keyT = new StringBuilder().append(t).append(houseId).toString();
+                        String keyT = new StringBuilder().append(t).append(keyEnd).toString();
                         Optional<String> optionalValue = Optional.of(this.redisCache.get(keyT));
                         values[j] = Double.valueOf(optionalValue.get());
                     }catch (Exception e){
@@ -215,7 +223,7 @@ public class DebsQ1PlugBolt extends BaseRichBolt {
         URL queryPath = EsperFactory.class.getResource(esperQueryPath);
         try {
             this.query = Resources.toString(queryPath, StandardCharsets.UTF_8);
-            this.query = query.replace("%MINUTES%", String.valueOf(this.windowSize));
+            this.query = query.replace("%MINUTES%", String.valueOf(this.windowSizeMinutes));
         } catch (IOException e){
             logger.error(e);
             System.exit(1);

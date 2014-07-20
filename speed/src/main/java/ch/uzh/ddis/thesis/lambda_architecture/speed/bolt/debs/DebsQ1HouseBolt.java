@@ -138,11 +138,11 @@ public class DebsQ1HouseBolt extends BaseRichBolt {
                 Double load = (Double) newEvents[i].get("load");
 
                 if(load == null){
-                    return;
+                    continue;
                 }
 
                 // save into kv-store
-                String key = new StringBuilder().append(this.timeWindow.getWindowStart()).append(houseId).toString();
+                String key = new StringBuilder().append(this.timeWindow.getWindowStart()).append("-").append(houseId).toString();
                 redisCache.set(key, String.valueOf(load));
 
                 // retrieve historical values
@@ -150,14 +150,14 @@ public class DebsQ1HouseBolt extends BaseRichBolt {
                 long nextPrediction = this.timeWindow.getWindowStart() + (this.windowSize * 2);
                 long oneDay = 24l * 60l * 60l * 1000l;
                 times[0] = (nextPrediction) - (oneDay * 3);
-                times[0] = (nextPrediction) - (oneDay * 2);
-                times[0] = (nextPrediction) - (oneDay * 1);
+                times[1] = (nextPrediction) - (oneDay * 2);
+                times[2] = (nextPrediction) - (oneDay * 1);
 
                 double values[] = new double[3];
                 for(int j = 0; j < times.length; j++){
                     long t = times[j];
                     try {
-                        String keyT = new StringBuilder().append(t).append(houseId).toString();
+                        String keyT = new StringBuilder().append(t).append("-").append(houseId).toString();
                         Optional<String> optionalValue = Optional.of(this.redisCache.get(keyT));
                         values[j] = Double.valueOf(optionalValue.get());
                     }catch (Exception e){
