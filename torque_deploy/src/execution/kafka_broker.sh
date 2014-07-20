@@ -23,6 +23,6 @@ sed -ie "s,\$zookeeper_host,$zookeeper_host," $kafka_config
 
 # start kafka broker
 cd $LAMBDA_APP_HOME
-JAVA_HOME=$JAVA_HOME nohup bin/kafka-server-start.sh config/server.properties > $LAMBDA_APP_LOGS/kafka.log 2>&1 &
+PATH=$PATH JAVA_HOME=$JAVA_HOME nohup bin/kafka-server-start.sh config/server.properties > $LAMBDA_APP_LOGS/kafka.log 2>&1 &
 kafka_pid=$!
 echo $kafka_pid > $LAMBDA_APP_PIDS/pidfile

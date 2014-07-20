@@ -28,6 +28,12 @@ echo $flume_pid >> $LAMBDA_APP_PIDS/pidfile
 
 # start kibana
 cd $LAMBDA_APP_HOME/jetty
-nohup nohup $JAVA_HOME/bin/java -jar start.jar jetty.port=8081 > $LAMBDA_APP_LOGS/jetty.log 2>&1 &
+nohup $JAVA_HOME/bin/java -jar -Xmx512m start.jar jetty.port=8081 > $LAMBDA_APP_LOGS/jetty.log 2>&1 &
 jetty_pid=$!
 echo $jetty_pid >> $LAMBDA_APP_PIDS/pidfile
+
+# start logstash
+cd $LAMBDA_APP_HOME/logstash
+nohup bin/logstash -e 'input { collectd { } } output { elasticsearch_http { add_field => [ "topic", "resources"] } }' > $LAMBDA_APP_LOGS/logstash.log 2>&1 &
+logstash_pid=$!
+echo $logstash_pid >> $LAMBDA_APP_PIDS/pidfile

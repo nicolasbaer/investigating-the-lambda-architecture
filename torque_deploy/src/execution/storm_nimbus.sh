@@ -20,12 +20,11 @@ sed -ie "s,\$port,$storm_port," $storm_config
 sed -ie "s,\$nimbus_host,$nimbus_host," $storm_config
 
 # start nimbus
-cd $LAMBDA_APP_HOME
-JAVA_HOME=$JAVA_HOME nohup bin/storm nimbus > $LAMBDA_APP_LOGS/nimbus.log 2>&1 &
+PATH=$PATH JAVA_HOME=$JAVA_HOME nohup $LAMBDA_APP_HOME/bin/storm nimbus > $LAMBDA_APP_LOGS/nimbus.log 2>&1 &
 nimbus_pid=$!
 echo $nimbus_pid > $LAMBDA_APP_PIDS/pidfile
 
 # start nimbus web ui
-nohup bin/storm ui > $LAMBDA_APP_LOGS/nimbus_ui.log 2>&1 &
+nohup $LAMBDA_APP_HOME/bin/storm ui > $LAMBDA_APP_LOGS/nimbus_ui.log 2>&1 &
 nimbus_ui_pid=$!
 echo $nimbus_ui_pid >> $LAMBDA_APP_PIDS/pidfile

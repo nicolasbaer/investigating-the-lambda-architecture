@@ -10,6 +10,7 @@ storm.local.dir: "$data_dir"
 supervisor.slots.ports:
     - $port
 
+worker.childopts: "-Xmx30000m"
 #
 #
 # ##### These may optionally be filled in:

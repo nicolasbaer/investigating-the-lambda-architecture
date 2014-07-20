@@ -14,6 +14,8 @@ function install_jre(){
         mkdir -p $JAVA_HOME
         cp -r $lambda_home_install/jre/* $JAVA_HOME/
     fi
+
+    PATH=$PATH:/$lambda_home_install/jre/bin
 }
 
 function install_app(){

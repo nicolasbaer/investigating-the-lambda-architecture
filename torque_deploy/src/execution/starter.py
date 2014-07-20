@@ -22,6 +22,7 @@ import time
 from docopt import docopt
 import requests
 import sh
+import daemon
 
 
 def qsub(resource_file, exec_path):
@@ -45,8 +46,7 @@ def qsub(resource_file, exec_path):
 
     sh.qsub(os.path.join(path, "submit_new.sh"),
             N="lambdathesis",
-            l="nodes=%s:ppn=%s" % (nodes, max_cpus),
-            l="walltime=%s" % walltime,
+            l="nodes=%s:ppn=%s:walltime=%s" % (nodes, max_cpus, walltime),
             j="oe",
             o="lambda-out",
             e="lambda-err",
@@ -144,7 +144,13 @@ def start_service(service, mapping, path, v_node_num, sleep=True):
         print "starting redis"
         sh.bash(os.path.join(path, "redis.sh"))
         print "finished starting redis"
-
+    
+    if service == "collectd":
+        if sleep:
+            time.sleep(5)
+        print "starting collectd"
+        sh.bash(os.path.join(path, "collectd.sh"), mapping["logging"])
+        print "finished starting collectd"
 
 def kill_service(service, install_root):
     pidfile = os.path.join(install_root, service, "pids", "pidfile")
@@ -258,6 +264,6 @@ if __name__ == "__main__":
                        arguments['<node_file>'], arguments['<exec_path>'])
 
     if arguments['wait']:
-        print "started!"
-        wait(arguments['<resource_file>'], arguments['<nodenum>'], arguments['<vnodenum>'], arguments['<node_file>'],
-             arguments['<exec_path>'], arguments['<install_path>'])
+        with daemon.DaemonContext():
+       	    wait(arguments['<resource_file>'], arguments['<nodenum>'], arguments['<vnodenum>'], arguments['<node_file>'],
+                 arguments['<exec_path>'], arguments['<install_path>'])

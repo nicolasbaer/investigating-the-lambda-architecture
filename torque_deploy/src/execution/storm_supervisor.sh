@@ -22,6 +22,6 @@ sed -ie "s,\$nimbus_host,$nimbus_host," $storm_config
 
 # start storm supervisor
 cd $LAMBDA_APP_HOME
-JAVA_HOME=$JAVA_HOME nohup bin/storm supervisor > $LAMBDA_APP_LOGS/supervisor.log 2>&1 &
+PATH=$PATH JAVA_HOME=$JAVA_HOME nohup bin/storm supervisor > $LAMBDA_APP_LOGS/supervisor.log 2>&1 &
 supervisor_pid=$!
 echo $supervisor_pid > $LAMBDA_APP_PIDS/pidfile

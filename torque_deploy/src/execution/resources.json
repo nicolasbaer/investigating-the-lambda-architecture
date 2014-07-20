@@ -31,7 +31,12 @@
             "mongodb": {
                 "cpus": 1,
                 "memory": "1024"
-            }
+            },
+            "redis": {
+                "cpus": 1,
+                "memory": "1024"
+            },
+            "collectd": {}
         },
         "1": {
             "yarn": {
@@ -41,7 +46,10 @@
             "kafka": {
                 "cpus": 1,
                 "memory": "6144"
-            }
+            },
+            "supervisor": {},
+            "collectd": {}
+
         },
         "2": {
             "yarn": {
@@ -51,7 +59,69 @@
             "kafka": {
                 "cpus": 1,
                 "memory": "6144"
-            }
+            },
+            "supervisor": {},
+            "collectd": {}
+        },
+        "3": {
+            "yarn": {
+                "cpus": 1,
+                "memory": "6144"
+            },
+            "kafka": {
+                "cpus": 1,
+                "memory": "6144"
+            },
+            "supervisor": {},
+            "collectd": {}
+        },
+        "4": {
+            "yarn": {
+                "cpus": 1,
+                "memory": "6144"
+            },
+            "kafka": {
+                "cpus": 1,
+                "memory": "6144"
+            },
+            "supervisor": {},
+            "collectd": {}
+        },
+        "5": {
+            "yarn": {
+                "cpus": 1,
+                "memory": "6144"
+            },
+            "kafka": {
+                "cpus": 1,
+                "memory": "6144"
+            },
+            "supervisor": {},
+            "collectd": {}
+        },
+        "6": {
+            "yarn": {
+                "cpus": 1,
+                "memory": "6144"
+            },
+            "kafka": {
+                "cpus": 1,
+                "memory": "6144"
+            },
+            "supervisor": {},
+            "collectd": {}
+        },
+        "7": {
+            "yarn": {
+                "cpus": 1,
+                "memory": "6144"
+            },
+            "kafka": {
+                "cpus": 1,
+                "memory": "6144"
+            },
+            "supervisor": {},
+            "collectd": {}
         }
     }
 }
