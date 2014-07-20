@@ -9,6 +9,8 @@ import com.beust.jcommander.Parameter;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.javatuples.Quintet;
 
 import java.io.File;
@@ -27,6 +29,7 @@ import java.util.concurrent.TimeUnit;
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class Coordinator {
+    private static final Logger logger = LogManager.getLogger();
 
     @Parameter(names = "-kafka-properties", description = "path to kafka properties")
     public String kafkaPropertiesPath;
@@ -47,7 +50,7 @@ public class Coordinator {
     public long startDataTime = -1;
 
     @Parameter(names = "-ticksPerMs", description = "data ticks (ms) per system ms, default=100")
-    public long ticksPerMs = 100;
+    public long ticksPerMs = 1000;
 
     @Parameter(names = "-file-ending", description = "file ending to look for in path, default=csv")
     public String fileEnding = "csv";
@@ -149,7 +152,9 @@ public class Coordinator {
         }
 
         try {
+            logger.info("starting coordinator with ticksPerMs={} at {}", coordinator.ticksPerMs, coordinator.startSysTime);
             coordinator.start();
+            logger.info("shutdown coordinator");
             System.exit(0);
         } catch (IOException | InterruptedException e){
             System.out.println("Something went terribly wrong! error = `" + e + "`");
