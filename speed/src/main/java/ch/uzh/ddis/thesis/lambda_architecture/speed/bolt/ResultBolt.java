@@ -56,7 +56,7 @@ public class ResultBolt extends BaseRichBolt {
         Map<String, Object> result = (Map<String, Object>) input.getValueByField("result");
         String topic = input.getStringByField("topic");
 
-        DBCollection collection = this.db.getCollection(new StringBuilder().append("speed-").append(topic).toString());
+        DBCollection collection = this.db.getCollection("result");
         BasicDBObject doc = new BasicDBObject(result);
         collection.save(doc);
 
