@@ -46,7 +46,7 @@
         <runtime.coordinator.netty.address.list>localhost:5050</runtime.coordinator.netty.address.list>
         <runtime.redis.host>localhost</runtime.redis.host>
         <runtime.speed.num.workers>1</runtime.speed.num.workers>
-        <runtime.speed.num.partitions>8</runtime.speed.num.partitions>
+        <runtime.num.partitions>8</runtime.num.partitions>
 
         <!-- dependency versions -->
         <kafka-version>0.8.1.1</kafka-version>
