@@ -49,7 +49,7 @@ public final class DebsQ1EsperPlug implements StreamTask, InitableTask, Windowab
     private static final String debsWindowSizeConf = "custom.debs.window.size";
     private long windowSize = 0;
 
-    private static SystemStream resultStream;
+    private SystemStream resultStream;
     private static final String outputKeySerde = "string";
     private static final String outputMsgSerde = "map";
 
@@ -70,11 +70,12 @@ public final class DebsQ1EsperPlug implements StreamTask, InitableTask, Windowab
     private long lastDataReceived;
     private long processCounter = 0;
     private StopWatch processWatch;
+    private boolean stopped = false;
 
     @Override
     public void init(Config config, TaskContext taskContext) throws Exception {
         this.windowSize = Long.valueOf(config.get(debsWindowSizeConf));
-        this.resultStream = new SystemStream("kafka", "debs-q1-plug-"+windowSize+"min-result");
+        this.resultStream = new SystemStream("kafka", "result");
 
         this.timeWindow = new TumblingWindow<>(windowSize);
         this.initEsper();
@@ -154,7 +155,10 @@ public final class DebsQ1EsperPlug implements StreamTask, InitableTask, Windowab
 
             taskCoordinator.shutdown(TaskCoordinator.RequestScope.CURRENT_TASK);
 
-            ShutdownHandler.handleShutdown("layer=batch");
+            if(!stopped) {
+                ShutdownHandler.handleShutdown("layer=batch");
+                stopped = true;
+            }
         }
     }
 
@@ -171,7 +175,7 @@ public final class DebsQ1EsperPlug implements StreamTask, InitableTask, Windowab
                 Double load = (Double) newEvents[i].get("load");
 
                 if(load == null){
-                    return;
+                    continue;
                 }
 
                 // save into kv-store
@@ -184,8 +188,8 @@ public final class DebsQ1EsperPlug implements StreamTask, InitableTask, Windowab
                 long nextPrediction = this.timeWindow.getWindowStart() + (this.windowSize * 2);
                 long oneDay = 24l * 60l * 60l * 1000l;
                 times[0] = (nextPrediction) - (oneDay * 3);
-                times[0] = (nextPrediction) - (oneDay * 2);
-                times[0] = (nextPrediction) - (oneDay * 1);
+                times[1] = (nextPrediction) - (oneDay * 2);
+                times[2] = (nextPrediction) - (oneDay * 1);
 
                 double values[] = new double[3];
                 for(int j = 0; j < times.length; j++){
@@ -211,7 +215,7 @@ public final class DebsQ1EsperPlug implements StreamTask, InitableTask, Windowab
                 result.put("predicted_load", predictedLoad);
                 result.put("data_time", this.timeWindow.getWindowEnd());
 
-                OutgoingMessageEnvelope resultMessage = new OutgoingMessageEnvelope(resultStream, outputKeySerde, outputMsgSerde, "1", "1", result);
+                OutgoingMessageEnvelope resultMessage = new OutgoingMessageEnvelope(resultStream, outputKeySerde, outputMsgSerde, houseId, "1", result);
                 messageCollector.send(resultMessage);
             }
         }

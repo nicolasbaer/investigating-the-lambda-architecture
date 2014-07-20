@@ -52,7 +52,7 @@ public final class SRBenchQ6TaskEsper implements StreamTask, InitableTask, Windo
     private static final String esperQueryPathVisibility = "/esper-queries/srbench-q6-visibility.esper";
     private static final long windowSize = 60l * 60l * 1000l; // 1 hour
 
-    private static SystemStream resultStream;
+    private SystemStream resultStream;
     private static final String outputKeySerde = "string";
     private static final String outputMsgSerde = "map";
 
@@ -74,6 +74,7 @@ public final class SRBenchQ6TaskEsper implements StreamTask, InitableTask, Windo
     private long lastDataReceived;
     private long processCounter = 0;
     private StopWatch processWatch;
+    private boolean stopped = false;
 
     @Override
     public void init(Config config, TaskContext taskContext) throws Exception {
@@ -154,7 +155,10 @@ public final class SRBenchQ6TaskEsper implements StreamTask, InitableTask, Windo
 
             taskCoordinator.shutdown(TaskCoordinator.RequestScope.CURRENT_TASK);
 
-            ShutdownHandler.handleShutdown("layer=batch");
+            if(!stopped) {
+                ShutdownHandler.handleShutdown("layer=batch");
+                stopped = true;
+            }
         }
     }
 
@@ -200,7 +204,7 @@ public final class SRBenchQ6TaskEsper implements StreamTask, InitableTask, Windo
                 result.put("ts_end", timeWindow.getWindowEnd());
                 result.put("sys_time", System.currentTimeMillis());
 
-                OutgoingMessageEnvelope resultMessage = new OutgoingMessageEnvelope(resultStream, outputKeySerde, outputMsgSerde, "1", "1", result);
+                OutgoingMessageEnvelope resultMessage = new OutgoingMessageEnvelope(resultStream, outputKeySerde, outputMsgSerde, station, "1", result);
                 messageCollector.send(resultMessage);
             }
         }
