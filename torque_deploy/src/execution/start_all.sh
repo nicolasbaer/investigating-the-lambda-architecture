@@ -61,6 +61,7 @@ then
   echo "$ticksPerMs" > $experiment_home/runtime/ticks
   echo "$experiment" > $experiment_home/runtime/experiment
   echo "$dataset" > $experiment_home/runtime/dataset
+  echo "$question" > $experiment_home/runtime/question
 
   # start producer:
   srun $lambda_home_exec/start_producer.sh $experiment $dataset $dataset_name $ticksPerMs $start_time $dataset_start_time
@@ -85,9 +86,14 @@ then
     shutdown_counter=$[shutdown_counter+1]
   done
 
+  # store results
+  $lambda_home_exec/store_result.sh $question
+
+  # store logging output
+  $lambda_home_exec/store_logging.sh
+
   # stop all services
   srun $lambda_home_exec/stop_node.sh
-
 
 else
   cp $PBS_NODEFILE > $nodefile
