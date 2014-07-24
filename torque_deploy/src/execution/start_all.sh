@@ -12,6 +12,8 @@ parallelism=$3
 experiment=$4
 question=$5
 ticksPerMs=$6
+kill_probability=$7
+kill_interval=$8
 
 . ./global.sh
 
@@ -63,8 +65,10 @@ then
   echo "$dataset" > $experiment_home/runtime/dataset
   echo "$question" > $experiment_home/runtime/question
 
-  # start producer:
-  srun $lambda_home_exec/start_producer.sh $experiment $dataset $dataset_name $ticksPerMs $start_time $dataset_start_time
+  # start producer and node failure simulation:
+  failure_log_folder=$experiment_home/failure
+  mkdir -p $failure_log_folder
+  srun $lambda_home_exec/start_producer.sh $experiment $dataset $dataset_name $ticksPerMs $start_time $dataset_start_time $kill_probability $kill_interval $parallelism $shutdown_folder $failure_log_folder
 
   # wait until shutdown files are created
   shutdown_counter=0

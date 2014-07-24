@@ -10,12 +10,14 @@ yarn_nodename_host=$1
 # configuration file manipulation
 yarn_config_core=$LAMBDA_APP_HOME/etc/hadoop/core-site.xml
 yarn_config_mapred=$LAMBDA_APP_HOME/etc/hadoop/mapred-site.xml
+yarn_config_site=$LAMBDA_APP_HOME/etc/hadoop/yarn-site.xml
 
 cp $lambda_home_conf/core-site.xml $yarn_config_core
 sed -ie "s,\$tmp_dir,$LAMBDA_APP_TMP," $yarn_config_core
 sed -ie "s,\$host,$yarn_nodename_host," $yarn_config_core
 
 cp $lambda_home_conf/mapred-site.xml $yarn_config_mapred
+cp $lambda_home_conf/yarn-site_rm.xml $yarn_config_site
 
 
 # start resource manager service

@@ -18,6 +18,6 @@ sed -ie "s,\$logging_host,$logging_host," $config
 
 # start collectd
 cd $LAMBDA_APP_HOME/collectd
-nohup ~/lambda/collectd/usr/sbin/collectd -f -C $config > $LAMBDA_APP_LOGS/collectd.log 2>&1 &
+nohup /usr/sbin/collectd -f -C $config > $LAMBDA_APP_LOGS/collectd.log 2>&1 &
 collectd_pid=$!
 echo $collectd_pid > $LAMBDA_APP_PIDS/pidfile

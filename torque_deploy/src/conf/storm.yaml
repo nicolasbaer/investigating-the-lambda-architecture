@@ -11,29 +11,14 @@ supervisor.slots.ports:
     - $port
 
 worker.childopts: "-Xmx30000m"
-#
-#
-# ##### These may optionally be filled in:
-#
-## List of custom serializations
-# topology.kryo.register:
-#     - org.mycompany.MyType
-#     - org.mycompany.MyType2: org.mycompany.MyType2Serializer
-#
-## List of custom kryo decorators
-# topology.kryo.decorators:
-#     - org.mycompany.MyDecorator
-#
-## Locations of the drpc servers
-# drpc.servers:
-#     - "server1"
-#     - "server2"
 
-## Metrics Consumers
-# topology.metrics.consumer.register:
-#   - class: "backtype.storm.metrics.LoggingMetricsConsumer"
-#     parallelism.hint: 1
-#   - class: "org.mycompany.MyMetricsConsumer"
-#     parallelism.hint: 1
-#     argument:
-#       - endpoint: "metrics-collector.mycompany.org"
+
+
+nimbus.task.timeout.secs: 5
+nimbus.supervisor.timeout.secs: 5
+nimbus.reassign: true
+
+supervisor.worker.start.timeout.secs: 5
+supervisor.worker.timeout.secs: 5
+supervisor.monitor.frequency.secs: 5
+supervisor.heartbeat.frequency.secs: 1

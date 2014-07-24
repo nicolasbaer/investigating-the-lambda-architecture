@@ -1,23 +1,6 @@
 <?xml version="1.0"?>
 <configuration>
     <property>
-        <name>yarn.resourcemanager.hostname</name>
-        <value>$host</value>
-    </property>
-    <property>
-        <name>yarn.nodemanager.localizer.address</name>
-        <value>0.0.0.0:$nodemanager_port</value>
-    </property>
-    <property>
-        <name>yarn.nodemanager.webapp.address</name>
-        <value>0.0.0.0:$nodemanager_web_port</value>
-    </property>
-    <property>
-        <name>yarn.nodemanager.resource.memory-mb</name>
-        <value>30720</value>
-    </property>
-
-    <property>
         <name>yarn.am.liveness-monitor.expiry-interval-ms</name>
         <value>5000</value>
     </property>
