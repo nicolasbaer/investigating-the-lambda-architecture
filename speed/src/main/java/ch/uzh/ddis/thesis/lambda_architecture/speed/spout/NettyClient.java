@@ -24,9 +24,7 @@ public class NettyClient extends ChannelInboundHandlerAdapter implements Seriali
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
 
-    private final String uuid = UUID.randomUUID().toString();
-
-    private static final int max_buffer = 5000;
+    public final String uuid = UUID.randomUUID().toString();
 
     private final NettyQueue nettyQueue;
     private final Executor executor;
@@ -41,17 +39,17 @@ public class NettyClient extends ChannelInboundHandlerAdapter implements Seriali
         executor = Executors.newCachedThreadPool();
     }
 
-
-
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 
         this.lastDataReceived = System.currentTimeMillis();
 
         String[] lines = String.valueOf(msg).split(Pattern.quote("$"));
+        boolean dataReceived = false;
         for(String line : lines){
             if(!line.equals("")) {
                 this.nettyQueue.queue.put(line);
+                dataReceived = true;
             }
         }
 

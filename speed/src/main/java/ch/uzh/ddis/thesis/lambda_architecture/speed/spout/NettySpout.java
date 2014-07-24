@@ -9,6 +9,7 @@ import backtype.storm.tuple.Values;
 import ch.uzh.ddis.thesis.lambda_architecture.data.IDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.IDataFactory;
 import ch.uzh.ddis.thesis.lambda_architecture.shutdown_handler.ShutdownHandler;
+import com.ecyrd.speed4j.StopWatch;
 import com.google.common.base.Optional;
 import com.google.common.net.HostAndPort;
 import io.netty.bootstrap.Bootstrap;
@@ -40,6 +41,8 @@ public class NettySpout extends BaseRichSpout {
     private static final int maxConnectionRetry = 50;
     private static final int maxChannelRetry = 5000;
     private static final long shutdownWaitThreshold = 5 * 60 * 1000;
+    private static final int maxPendingWait = 5;
+    private static final int maxPending = 500;
 
     private final ArrayList<HostAndPort> hosts;
     private final IDataFactory dataFactory;
@@ -61,6 +64,9 @@ public class NettySpout extends BaseRichSpout {
 
     private long lastDataEmitted = 0;
     private boolean stopped = false;
+
+    private long processCounter = 0;
+    private StopWatch processWatch;
 
     public NettySpout(ArrayList<HostAndPort> hosts, IDataFactory dataFactory) {
         this.hosts = hosts;
@@ -161,18 +167,40 @@ public class NettySpout extends BaseRichSpout {
     @Override
     public void nextTuple() {
         Optional<String> optionalData = Optional.fromNullable(this.nettyQueue.queue.poll());
-        if(optionalData.isPresent()) {
+        if (optionalData.isPresent()) {
             IDataEntry data = this.dataFactory.makeDataEntryFromCSV(optionalData.get());
-            this.outputCollector.emit(new Values(data, data.getPartitionKey()));
+            this.outputCollector.emit(new Values(data, data.getPartitionKey()), data.getId());
 
             this.lastDataEmitted = System.currentTimeMillis();
-        } else{
-            if(!stopped && lastDataEmitted != 0 && System.currentTimeMillis() - lastDataEmitted > shutdownWaitThreshold){
+
+            if (this.processCounter == 0) {
+                this.processWatch = new StopWatch();
+            }
+
+            this.processCounter++;
+            if (this.processCounter % 1000 == 0) {
+                this.processWatch.stop();
+                logger.info(performance, "topic={} stepSize={} duration={} threadId={}",
+                        "nettySpoutMessageThroughput", "1000", this.processWatch.getTimeMicros(), this.context.getThisTaskIndex());
+                this.processWatch = new StopWatch();
+            }
+        } else {
+            if (!stopped && lastDataEmitted != 0 && System.currentTimeMillis() - lastDataEmitted > shutdownWaitThreshold) {
                 ShutdownHandler.handleShutdown("layer=speed");
                 this.close();
                 this.stopped = true;
             }
         }
+    }
+
+    @Override
+    public void ack(Object msgId) {
+        // no-op
+    }
+
+    @Override
+    public void fail(Object msgId) {
+        // no-op
     }
 
     @Override

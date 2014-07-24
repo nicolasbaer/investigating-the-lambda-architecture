@@ -5,6 +5,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
+import java.util.UUID;
+
 /**
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
@@ -13,7 +15,8 @@ public class NettyHeartbeat implements Runnable{
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
 
-    private final static long heartBeatRate = 500;
+    private final static long heartBeatRate = 5;
+    private final String uuid = UUID.randomUUID().toString();
 
     private final NettyClient client;
     private final NettyQueue nettyQueue;
@@ -32,7 +35,7 @@ public class NettyHeartbeat implements Runnable{
             if(lastData != 0 && (System.currentTimeMillis() - lastData) > heartBeatRate && this.nettyQueue.queue.isEmpty()){
                 if(this.client.getChannel().isActive()){
                     this.client.getChannel().writeAndFlush("next");
-                    logger.info(remoteDebug, "topic=nettyHeartbeat lastData={}", lastData);
+                    logger.info(remoteDebug, "topic=nettyHeartbeat lastData={} uuid={} clientid={}", lastData, uuid, this.client.uuid);
                 }
             }
 
