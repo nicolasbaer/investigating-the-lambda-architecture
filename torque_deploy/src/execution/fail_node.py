@@ -21,7 +21,6 @@ import time
 
 
 from docopt import docopt
-import sh
 
 
 def check_shutdown(paralellism, shutdown_path):
@@ -50,32 +49,23 @@ def fail_node(node_num, kill_probability, interval, exec_path, parallelism, shut
 
         rand = random.random()
 
-        logging.debug("random number: %s < %s; up=%s" % (rand, kill_probability, up))
-
         if rand < kill_probability:
-            logging.debug("kill probability reached up=%s" % str(up))
             if up:
                 try:
                     command = os.path.join(exec_path, "fail_node.sh")
                     subprocess.Popen([command])
                 except Exception as e:
-                    logging.exception(e.message)
-
-                logging.debug("killed")
+                    pass
 
                 with open(os.path.join(log_path, str(node_num)), "a") as f:
                     f.write("%s,%s,down\n" % (node_num, int(time.time())))
             else:
                 try:
-                    logging.debug("re-aliving node")
                     subprocess.Popen([os.path.join(exec_path, "realive_storm.sh")])
                     subprocess.Popen([os.path.join(exec_path, "realive_kafka.sh")])
                     subprocess.Popen([os.path.join(exec_path, "realive_yarn.sh")])
-                    logging.debug("node is alive again!")
                 except Exception as e:
-                    logging.exception(e.message)
-
-                logging.debug("realive done writing log")
+                    pass
 
                 with open(os.path.join(log_path, str(node_num)), "a") as f:
                     f.write("%s,%s,up\n" % (node_num, int(time.time())))
@@ -97,9 +87,5 @@ if __name__ == "__main__":
     parallelism = int(arguments['<parallelism>'])
     kill_prbability = float(arguments['<kill_probability>'])
     interval = int(arguments['<interval>'])
-
-    logging.basicConfig(filename="/home/user/baer/f_log/%s.log" % node_num, level=logging.DEBUG,
-                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
 
     fail_node(node_num, kill_prbability, interval, exec_path, parallelism, shutdown_path, log_path)
