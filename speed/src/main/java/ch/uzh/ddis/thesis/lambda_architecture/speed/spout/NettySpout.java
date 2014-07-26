@@ -169,7 +169,7 @@ public class NettySpout extends BaseRichSpout {
         Optional<String> optionalData = Optional.fromNullable(this.nettyQueue.queue.poll());
         if (optionalData.isPresent()) {
             IDataEntry data = this.dataFactory.makeDataEntryFromCSV(optionalData.get());
-            this.outputCollector.emit(new Values(data, data.getPartitionKey()), data.getId());
+            this.outputCollector.emit(new Values(data.toString(), data.getPartitionKey()), data.getId());
 
             this.lastDataEmitted = System.currentTimeMillis();
 

@@ -88,7 +88,7 @@ public class SRBenchQ5Bolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple input) {
-        SRBenchDataEntry entry = (SRBenchDataEntry) input.getValueByField("data");
+        SRBenchDataEntry entry = new SRBenchDataEntry((String) input.getValueByField("data"));
 
         if(!firstTimestampSaved){
             this.redisCache.set(firstTimestampKey, String.valueOf(entry.getTimestamp()));

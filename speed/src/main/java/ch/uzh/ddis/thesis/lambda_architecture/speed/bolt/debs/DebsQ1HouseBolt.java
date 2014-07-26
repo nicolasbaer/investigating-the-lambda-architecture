@@ -96,7 +96,7 @@ public class DebsQ1HouseBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple input) {
-        DebsDataEntry entry = (DebsDataEntry) input.getValueByField("data");
+        DebsDataEntry entry = new DebsDataEntry((String) input.getValueByField("data"));
 
         if(!firstTimestampSaved){
             this.redisCache.set(firstTimestampKey, String.valueOf(entry.getTimestamp()));
