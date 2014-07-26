@@ -1,0 +1,72 @@
+{
+  "query": {
+    "filtered": {
+      "query": {
+        "bool": {
+          "should": [
+            {
+              "query_string": {
+                "query": "*"
+              }
+            },
+            {
+              "query_string": {
+                "query": "csvreaderthroughput"
+              }
+            },
+            {
+              "query_string": {
+                "query": "samzamessagethroughput"
+              }
+            },
+            {
+              "query_string": {
+                "query": "synchronizerthroughput"
+              }
+            },
+            {
+              "query_string": {
+                "query": "nettythroughput"
+              }
+            },
+            {
+              "query_string": {
+                "query": "boltmessagethroughput"
+              }
+            },
+            {
+              "query_string": {
+                "query": "kafkaproducerthroughput"
+              }
+            }
+          ]
+        }
+      },
+      "filter": {
+        "bool": {
+          "must": [
+            {
+              "fquery": {
+                "query": {
+                  "query_string": {
+                    "query": "topic:(\"boltMessageThroughput\" OR \"samzaMessageThroughput\")"
+                  }
+                },
+                "_cache": true
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "size": 1,
+  "sort": [
+    {
+      "@timestamp": {
+        "order": "desc"
+      }
+    }
+  ]
+}
+    

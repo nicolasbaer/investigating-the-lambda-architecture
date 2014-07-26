@@ -12,6 +12,9 @@ kill_interval=$8
 paralellism=${9}
 shutdown_path=${10}
 log_path=${11}
+realive_interval=${12}
+nodefile=${13}
+kill_concurrent_nodes=${14}
 
 # install application and dependencies
 . ./install.sh "jre"
@@ -44,5 +47,5 @@ sleep 10
 
 # start node failure simulation
 echo "starting node failure simulation"
-$lambda_home_pyenv/bin/python $lambda_home_exec/fail_node.py "$SLURM_NODEID" "$kill_probability" "$kill_interval" "$paralellism" "$lambda_home_exec" "$shutdown_path" "$log_path"
+$lambda_home_pyenv/bin/python $lambda_home_exec/fail_node.py "$SLURM_NODEID" "$kill_probability" "$kill_interval" "$paralellism" "$lambda_home_exec" "$shutdown_path" "$log_path" "$realive_interval" "$nodefile" "$kill_concurrent_nodes"
 echo "finished node failure simulation"

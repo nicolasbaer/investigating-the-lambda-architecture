@@ -14,6 +14,8 @@ question=$5
 ticksPerMs=$6
 kill_probability=$7
 kill_interval=$8
+realive_interval=$9
+kill_concurrent_nodes=${10}
 
 . ./global.sh
 
@@ -64,31 +66,15 @@ then
   echo "$experiment" > $experiment_home/runtime/experiment
   echo "$dataset" > $experiment_home/runtime/dataset
   echo "$question" > $experiment_home/runtime/question
+  echo "$kill_probability" > $experiment_home/runtime/kill_probability
+  echo "$kill_interval" > $experiment_home/runtime/kill_interval
+  echo "$realive_interval" > $experiment_home/runtime/realive_interval
 
-  # start producer and node failure simulation:
+
+  # start producer and node failure simulation on each node:
   failure_log_folder=$experiment_home/failure
   mkdir -p $failure_log_folder
-  srun $lambda_home_exec/start_producer.sh $experiment $dataset $dataset_name $ticksPerMs $start_time $dataset_start_time $kill_probability $kill_interval $parallelism $shutdown_folder $failure_log_folder
-
-  # wait until shutdown files are created
-  shutdown_counter=0
-  while :
-  do
-    num_files=$(ls $shutdown_folder | wc -l)
-    if [ $num_files = $parallelism ]
-    then
-      break
-    else
-      sleep 100
-    fi
-    
-    # after 30 hours this experiment is done the latest!   
-    if [ $shutdown_counter -gt 1296 ]
-    then
-      break;
-    fi
-    shutdown_counter=$[shutdown_counter+1]
-  done
+  srun $lambda_home_exec/start_producer.sh $experiment $dataset $dataset_name $ticksPerMs $start_time $dataset_start_time $kill_probability $kill_interval $parallelism $shutdown_folder $failure_log_folder $realive_interval $nodefile $kill_concurrent_nodes
 
   # store results
   $lambda_home_exec/store_result.sh $question

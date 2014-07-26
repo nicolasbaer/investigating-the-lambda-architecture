@@ -10,15 +10,13 @@ storm.local.dir: "$data_dir"
 supervisor.slots.ports:
     - $port
 
-worker.childopts: "-Xmx30000m"
+worker.childopts: "-Xmx60000m"
 
-
-
-nimbus.task.timeout.secs: 5
-nimbus.supervisor.timeout.secs: 5
+nimbus.task.timeout.secs: 2
+nimbus.supervisor.timeout.secs: 2
 nimbus.reassign: true
 
 supervisor.worker.start.timeout.secs: 5
-supervisor.worker.timeout.secs: 5
-supervisor.monitor.frequency.secs: 5
+supervisor.worker.timeout.secs: 2
+supervisor.monitor.frequency.secs: 2
 supervisor.heartbeat.frequency.secs: 1
