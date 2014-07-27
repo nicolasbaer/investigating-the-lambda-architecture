@@ -30,6 +30,7 @@
         <module>speed</module>
         <module>partitioner</module>
         <module>shutdown_handler</module>
+        <module>dataset_statistics</module>
     </modules>
 
     <properties>
