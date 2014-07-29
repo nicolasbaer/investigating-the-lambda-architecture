@@ -14,6 +14,7 @@ import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperFactory;
 import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperUpdateListener;
 import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TimeWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TumblingWindow;
+import ch.uzh.ddis.thesis.lambda_architecture.data.utils.Round;
 import com.ecyrd.speed4j.StopWatch;
 import com.espertech.esper.client.*;
 import com.espertech.esper.client.time.CurrentTimeEvent;
@@ -101,6 +102,8 @@ public class DebsQ1PlugBolt extends BaseRichBolt {
         if(!firstTimestampSaved){
             this.redisCache.set(firstTimestampKey, String.valueOf(entry.getTimestamp()));
             firstTimestampSaved = true;
+
+            timeWindow.addEvent(entry);
         }
 
         this.sendTimeEvent(entry.getTimestamp());
@@ -144,6 +147,8 @@ public class DebsQ1PlugBolt extends BaseRichBolt {
                     continue;
                 }
 
+                load = Round.roundToFiveDecimals(load);
+
                 // save into kv-store
                 StringBuilder keyEnd = new StringBuilder().append("-").append(houseId)
                         .append("-")
@@ -177,6 +182,7 @@ public class DebsQ1PlugBolt extends BaseRichBolt {
 
                 // calculate the result according to L(s_{i+2}) = ( avgLoad(s_i) + median( { avgLoad(s_j) } ) ) / 2
                 double predictedLoad = (load + StatUtils.percentile(values, 50)) / 2;
+                predictedLoad = Round.roundToFiveDecimals(predictedLoad);
 
                 HashMap<String, Object> result = new HashMap<>(1);
                 result.put("ts", nextPrediction / 1000);
@@ -185,7 +191,8 @@ public class DebsQ1PlugBolt extends BaseRichBolt {
                 result.put("plug_id", plugId);
                 result.put("predicted_load", predictedLoad);
                 result.put("sys_time", System.currentTimeMillis());
-                result.put("data_time", this.timeWindow.getWindowEnd());
+                result.put("ts_start", this.timeWindow.getWindowStart());
+                result.put("ts_end", this.timeWindow.getWindowEnd());
 
                 this.outputCollector.emit(new Values(result, taskName, this.taskId));
             }

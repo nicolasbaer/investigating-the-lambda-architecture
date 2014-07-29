@@ -1,5 +1,6 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.results;
 
+import com.ecyrd.speed4j.StopWatch;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -29,6 +30,10 @@ public class StoreResultTask implements InitableTask, WindowableTask, StreamTask
     long lastResultReceived = 0;
     long processCounter = 0;
 
+    private boolean indexCreated = false;
+
+    private StopWatch processWatch;
+
     @Override
     public void init(Config config, TaskContext taskContext) throws Exception {
         String mongoDbHost = config.get("custom.result.mongodb.host");
@@ -41,17 +46,40 @@ public class StoreResultTask implements InitableTask, WindowableTask, StreamTask
 
     @Override
     public void process(IncomingMessageEnvelope incomingMessageEnvelope, MessageCollector messageCollector, TaskCoordinator taskCoordinator) throws Exception {
-        String stream = incomingMessageEnvelope.getSystemStreamPartition().getStream();
-        DBCollection collection = this.db.getCollection(stream);
-
+        DBCollection collection = this.db.getCollection("result");
         Map<String, Object> result = (Map<String, Object>) incomingMessageEnvelope.getMessage();
-        BasicDBObject doc = new BasicDBObject(result);
-        collection.save(doc);
 
-        if(processCounter % 1000 == 0) {
-            logger.info(performance, "topic=samzastoreresult stream={} stepSize=100", stream);
+        if(!indexCreated){
+            indexCreated = true;
+
+            BasicDBObject index = new BasicDBObject();
+            for(String key : result.keySet()){
+                index.append(key, 1);
+            }
+
+            collection.createIndex(index);
         }
+
+        String stream = incomingMessageEnvelope.getSystemStreamPartition().getStream();
+        BasicDBObject doc = new BasicDBObject(result);
+
+        // check for duplicate entry before insert. Samza only provides at least once messaging guarantee, therefore we have to manage the unique results ourselves.
+        if(collection.findOne(doc) == null){
+            collection.save(doc);
+        }
+
+        taskCoordinator.commit(TaskCoordinator.RequestScope.CURRENT_TASK);
+
+        if(this.processCounter == 0){
+            this.processWatch = new StopWatch();
+        }
+
         processCounter++;
+        if(processCounter % 100 == 0) {
+            this.processWatch.stop();
+            logger.info(performance, "topic=samzastoreresult stream={} stepSize=100 duration={}", stream, this.processWatch.getTimeMicros());
+            this.processWatch = new StopWatch();
+        }
 
         this.lastResultReceived = System.currentTimeMillis();
     }

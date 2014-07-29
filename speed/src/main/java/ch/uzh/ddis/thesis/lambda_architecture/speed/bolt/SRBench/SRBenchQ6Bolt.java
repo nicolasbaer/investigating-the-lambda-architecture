@@ -100,6 +100,8 @@ public class SRBenchQ6Bolt extends BaseRichBolt {
         if(!firstTimestampSaved){
             this.redisCache.set(firstTimestampKey, String.valueOf(entry.getTimestamp()));
             firstTimestampSaved = true;
+
+            timeWindow.addEvent(entry);
         }
 
         this.sendTimeEvent(entry.getTimestamp());

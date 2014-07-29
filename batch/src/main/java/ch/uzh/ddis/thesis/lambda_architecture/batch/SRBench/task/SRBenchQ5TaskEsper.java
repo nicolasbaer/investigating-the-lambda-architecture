@@ -1,12 +1,13 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.SRBench.task;
 
-import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.SlidingWindow;
-import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TimeWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.data.SRBench.SRBenchDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.SimpleTimestamp;
 import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;
 import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperFactory;
 import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperUpdateListener;
+import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.SlidingWindow;
+import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TimeWindow;
+import ch.uzh.ddis.thesis.lambda_architecture.data.utils.Round;
 import ch.uzh.ddis.thesis.lambda_architecture.shutdown_handler.ShutdownHandler;
 import com.ecyrd.speed4j.StopWatch;
 import com.espertech.esper.client.*;
@@ -41,7 +42,7 @@ public final class SRBenchQ5TaskEsper implements StreamTask, InitableTask, Windo
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
 
-    private static final long shutdownWaitThreshold = (1000 * 60 * 5); // 5 minutes
+    private static final long shutdownWaitThreshold = (1000 * 60 * 10); // 10 minutes
     private final String uuid = UUID.randomUUID().toString();
 
     private static final String esperEngineName = "srbench-q5";
@@ -58,6 +59,7 @@ public final class SRBenchQ5TaskEsper implements StreamTask, InitableTask, Windo
     private KeyValueStore<String, Long> firstTimestampStore;
     private boolean firstTimestampSaved = false;
 
+    private EPServiceProvider eps;
     private EPRuntime esper;
     private TimeWindow<Timestamped> timeWindow;
     private EsperUpdateListener esperUpdateListener;
@@ -90,6 +92,8 @@ public final class SRBenchQ5TaskEsper implements StreamTask, InitableTask, Windo
         if(!firstTimestampSaved){
             this.firstTimestampStore.put(firstTimestampKey, entry.getTimestamp());
             firstTimestampSaved = true;
+
+            timeWindow.addEvent(entry);
         }
 
         this.sendTimeEvent(entry.getTimestamp());
@@ -146,6 +150,8 @@ public final class SRBenchQ5TaskEsper implements StreamTask, InitableTask, Windo
 
             logger.info(performance, "topic=samzashutdown uuid={} lastData={}", uuid, lastDataReceived);
 
+            this.eps.destroy();
+
             taskCoordinator.shutdown(TaskCoordinator.RequestScope.CURRENT_TASK);
 
             if(!stopped) {
@@ -165,6 +171,9 @@ public final class SRBenchQ5TaskEsper implements StreamTask, InitableTask, Windo
                 String station = (String) newEvents[i].get("stat");
                 Double wind = (Double) newEvents[i].get("wvalue");
                 Double airTemperature = (Double) newEvents[i].get("avalue");
+
+                wind = Round.roundToFiveDecimals(wind);
+                airTemperature = Round.roundToFiveDecimals(airTemperature);
 
                 HashMap<String, Object> result = new HashMap<>(1);
                 result.put("station", station);
@@ -193,7 +202,7 @@ public final class SRBenchQ5TaskEsper implements StreamTask, InitableTask, Windo
             System.exit(1);
         }
 
-        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench(esperEngineName + "-" + uuid);
+        this.eps = EsperFactory.makeEsperServiceProviderSRBench(esperEngineName + "-" + uuid);
         EPAdministrator cepAdm = eps.getEPAdministrator();
         EPStatement cepStatement = cepAdm.createEPL(query);
         this.esperUpdateListener = new EsperUpdateListener();

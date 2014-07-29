@@ -1,12 +1,13 @@
 package ch.uzh.ddis.thesis.lambda_architecture.batch.debs;
 
-import ch.uzh.ddis.thesis.lambda_architecture.data.debs.DebsDataEntry;
-import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TimeWindow;
-import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TumblingWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.data.SimpleTimestamp;
 import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;
+import ch.uzh.ddis.thesis.lambda_architecture.data.debs.DebsDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperFactory;
 import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperUpdateListener;
+import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TimeWindow;
+import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TumblingWindow;
+import ch.uzh.ddis.thesis.lambda_architecture.data.utils.Round;
 import ch.uzh.ddis.thesis.lambda_architecture.shutdown_handler.ShutdownHandler;
 import com.ecyrd.speed4j.StopWatch;
 import com.espertech.esper.client.*;
@@ -47,6 +48,7 @@ public final class DebsQ1EsperHouse implements StreamTask, InitableTask, Windowa
     private static final String esperQueryPath = "/esper-queries/debs-q1-house.esper";
     private static final String debsWindowSizeConf = "custom.debs.window.size";
     private long windowSize = 0;
+    private long windowSizeMinutes = 0;
 
     private SystemStream resultStream;
     private static final String outputKeySerde = "string";
@@ -61,6 +63,7 @@ public final class DebsQ1EsperHouse implements StreamTask, InitableTask, Windowa
     private KeyValueStore<String, Double> historyStore;
 
     private EPRuntime esper;
+    private EPServiceProvider eps;
     private TimeWindow<Timestamped> timeWindow;
     private EsperUpdateListener esperUpdateListener;
     private String query;
@@ -73,7 +76,9 @@ public final class DebsQ1EsperHouse implements StreamTask, InitableTask, Windowa
 
     @Override
     public void init(Config config, TaskContext taskContext) throws Exception {
-        this.windowSize = Long.valueOf(config.get(debsWindowSizeConf));
+        this.windowSizeMinutes = Long.valueOf(config.get(debsWindowSizeConf));
+        this.windowSize = windowSizeMinutes * 60 * 1000;
+
         this.resultStream = new SystemStream("kafka", "result");
 
         this.timeWindow = new TumblingWindow<>(windowSize);
@@ -94,6 +99,8 @@ public final class DebsQ1EsperHouse implements StreamTask, InitableTask, Windowa
         if(!firstTimestampSaved){
             this.firstTimestampStore.put(firstTimestampKey, entry.getTimestamp());
             firstTimestampSaved = true;
+
+            timeWindow.addEvent(entry);
         }
 
         this.sendTimeEvent(entry.getTimestamp());
@@ -152,6 +159,8 @@ public final class DebsQ1EsperHouse implements StreamTask, InitableTask, Windowa
 
             logger.info(performance, "topic=samzashutdown uuid={} lastData={}", uuid, lastDataReceived);
 
+            this.eps.destroy();
+
             taskCoordinator.shutdown(TaskCoordinator.RequestScope.CURRENT_TASK);
 
             if(!stopped) {
@@ -174,6 +183,8 @@ public final class DebsQ1EsperHouse implements StreamTask, InitableTask, Windowa
                 if(load == null){
                     continue;
                 }
+
+                load = Round.roundToFiveDecimals(load);
 
                 // save into kv-store
                 String key = new StringBuilder().append(this.timeWindow.getWindowStart()).append("-").append(houseId).toString();
@@ -202,13 +213,15 @@ public final class DebsQ1EsperHouse implements StreamTask, InitableTask, Windowa
 
                 // calculate the result according to L(s_{i+2}) = ( avgLoad(s_i) + median( { avgLoad(s_j) } ) ) / 2
                 double predictedLoad = (load + StatUtils.percentile(values, 50)) / 2;
+                predictedLoad = Round.roundToFiveDecimals(predictedLoad);
 
                 HashMap<String, Object> result = new HashMap<>(1);
                 result.put("ts", nextPrediction / 1000);
                 result.put("house_id", houseId);
                 result.put("predicted_load", predictedLoad);
                 result.put("sys_time", System.currentTimeMillis());
-                result.put("data_time", this.timeWindow.getWindowEnd());
+                result.put("ts_start", this.timeWindow.getWindowStart());
+                result.put("ts_end", this.timeWindow.getWindowEnd());
 
                 OutgoingMessageEnvelope resultMessage = new OutgoingMessageEnvelope(resultStream, outputKeySerde, outputMsgSerde, houseId, "1", result);
                 messageCollector.send(resultMessage);
@@ -224,13 +237,13 @@ public final class DebsQ1EsperHouse implements StreamTask, InitableTask, Windowa
         URL queryPath = EsperFactory.class.getResource(esperQueryPath);
         try {
             this.query = Resources.toString(queryPath, StandardCharsets.UTF_8);
-            this.query = query.replace("%MINUTES%", String.valueOf(this.windowSize));
+            this.query = query.replace("%MINUTES%", String.valueOf(this.windowSizeMinutes));
         } catch (IOException e){
             logger.error(e);
             System.exit(1);
         }
 
-        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderDebs(esperEngineName + "-" + uuid);
+        this.eps = EsperFactory.makeEsperServiceProviderDebs(esperEngineName + "-" + uuid);
         EPAdministrator cepAdm = eps.getEPAdministrator();
         EPStatement cepStatement = cepAdm.createEPL(query);
         this.esperUpdateListener = new EsperUpdateListener();

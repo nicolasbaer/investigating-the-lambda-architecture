@@ -24,6 +24,7 @@ import org.apache.samza.system.OutgoingMessageEnvelope;
 import org.apache.samza.system.SystemStream;
 import org.apache.samza.task.*;
 import org.javatuples.Pair;
+import org.joda.time.DateTime;
 
 import java.io.IOException;
 import java.net.URL;
@@ -41,7 +42,7 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
 
-    private static final long shutdownWaitThreshold = (1000 * 60 * 5); // 5 minutes
+    private static final long shutdownWaitThreshold = (1000 * 60 * 10); // 10 minutes
     private final String uuid = UUID.randomUUID().toString();
 
     private static final String esperEngineName = "srbench-q1";
@@ -57,6 +58,7 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
     private KeyValueStore<String, Long> firstTimestampStore;
     private boolean firstTimestampSaved = false;
 
+    private EPServiceProvider eps;
     private EPRuntime esper;
     private TimeWindow<Timestamped> timeWindow;
     private EsperUpdateListener esperUpdateListener;
@@ -87,8 +89,11 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
         SRBenchDataEntry entry = new SRBenchDataEntry((String) incomingMessageEnvelope.getMessage());
 
         if(!firstTimestampSaved){
+            logger.info(performance, "topic=firstTimeStamp ts={}", entry.getTimestamp());
             this.firstTimestampStore.put(firstTimestampKey, entry.getTimestamp());
             firstTimestampSaved = true;
+
+            timeWindow.addEvent(entry);
         }
 
         this.sendTimeEvent(entry.getTimestamp());
@@ -100,7 +105,12 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
             taskCoordinator.commit(TaskCoordinator.RequestScope.CURRENT_TASK);
         }
 
+        long startBeforeUpdate = timeWindow.getWindowStart();
         this.timeWindow.addEvent(entry);
+
+        if (new DateTime(this.timeWindow.getWindowStart()).getMinuteOfHour() != 1){
+            logger.info(performance, "topic=timestampdebug wStart={} event={} before={}", this.timeWindow.getWindowStart(), entry.getTimestamp(), startBeforeUpdate);
+        }
 
         this.processCounter++;
         if(this.processCounter % 1000 == 0){
@@ -146,6 +156,8 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
             this.processNewData(messageCollector);
 
             logger.info(performance, "topic=samzashutdown uuid={} lastData={}", uuid, lastDataReceived);
+
+            this.eps.destroy();
 
             taskCoordinator.shutdown(TaskCoordinator.RequestScope.CURRENT_TASK);
 
@@ -194,7 +206,7 @@ public final class SRBenchQ1TaskEsper implements StreamTask, InitableTask, Windo
             System.exit(1);
         }
 
-        EPServiceProvider eps = EsperFactory.makeEsperServiceProviderSRBench(esperEngineName + "-" + uuid);
+        this.eps = EsperFactory.makeEsperServiceProviderSRBench(esperEngineName + "-" + uuid);
         EPAdministrator cepAdm = eps.getEPAdministrator();
         EPStatement cepStatement = cepAdm.createEPL(query);
         this.esperUpdateListener = new EsperUpdateListener();

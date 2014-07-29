@@ -14,6 +14,7 @@ import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperFactory;
 import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperUpdateListener;
 import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.SlidingWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TimeWindow;
+import ch.uzh.ddis.thesis.lambda_architecture.data.utils.Round;
 import com.ecyrd.speed4j.StopWatch;
 import com.espertech.esper.client.*;
 import com.espertech.esper.client.time.CurrentTimeEvent;
@@ -93,6 +94,8 @@ public class SRBenchQ4Bolt extends BaseRichBolt {
         if(!firstTimestampSaved){
             this.redisCache.set(firstTimestampKey, String.valueOf(entry.getTimestamp()));
             firstTimestampSaved = true;
+
+            timeWindow.addEvent(entry);
         }
 
         this.sendTimeEvent(entry.getTimestamp());
@@ -129,6 +132,9 @@ public class SRBenchQ4Bolt extends BaseRichBolt {
                 String station = (String) newEvents[i].get("station");
                 Double speed = (Double) newEvents[i].get("speed");
                 Double temperature = (Double) newEvents[i].get("temperature");
+
+                speed = Round.roundToFiveDecimals(speed);
+                temperature = Round.roundToFiveDecimals(temperature);
 
                 HashMap<String, Object> result = new HashMap<>(1);
                 result.put("station", station);

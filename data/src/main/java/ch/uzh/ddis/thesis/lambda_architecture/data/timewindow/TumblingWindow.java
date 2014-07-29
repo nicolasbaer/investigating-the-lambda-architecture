@@ -25,6 +25,14 @@ public final class TumblingWindow<E extends Timestamped> implements TimeWindow<E
 
     @Override
     public void addEvent(E message) {
+        if (currentWindowEnd == 0 && currentWindowStart == 0){
+            this.currentWindowStart = message.getTimestamp();
+            this.currentWindowEnd = this.currentWindowStart + (sizeMs -1);
+            this.startEvent = message;
+
+            return;
+        }
+
         if (message.getTimestamp() > currentWindowEnd) {
             resetWindow(message.getTimestamp());
             this.startEvent = message;
@@ -53,8 +61,10 @@ public final class TumblingWindow<E extends Timestamped> implements TimeWindow<E
 
 
     private void resetWindow(long start){
-        this.currentWindowStart = start;
-        this.currentWindowEnd = start + (sizeMs -1);
+        int multi = (int) Math.ceil((start - currentWindowStart) / sizeMs);
+        long newStart = currentWindowStart + (multi * sizeMs);
+        this.currentWindowStart = newStart;
+        this.currentWindowEnd = newStart + (sizeMs -1);
     }
 
 

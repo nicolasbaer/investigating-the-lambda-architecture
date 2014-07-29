@@ -92,6 +92,8 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
         if(!firstTimestampSaved){
             this.redisCache.set(firstTimestampKey, String.valueOf(entry.getTimestamp()));
             firstTimestampSaved = true;
+
+            timeWindow.addEvent(entry);
         }
 
         this.sendTimeEvent(entry.getTimestamp());
@@ -166,6 +168,10 @@ public class SRBenchQ1Bolt extends BaseRichBolt {
             this.sendTimeEvent(timestamp);
             this.firstTimestampSaved = true;
             this.timeWindow.addEvent(new SimpleTimestamp(timestamp));
+
+            logger.info(performance, "topic=restoreTimestamp first={} taskId={}", timestamp, taskId);
+        } else{
+            logger.info(performance, "topic=restoreTimestampFailed taskId={}", taskId);
         }
     }
 
