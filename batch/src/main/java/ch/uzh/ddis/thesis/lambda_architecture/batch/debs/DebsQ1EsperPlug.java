@@ -42,7 +42,7 @@ public final class DebsQ1EsperPlug implements StreamTask, InitableTask, Windowab
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
 
-    private static final long shutdownWaitThreshold = (1000 * 60 * 10); // 10 minutes
+    private static final long shutdownWaitThreshold = (1000 * 60 * 2); // 2 minutes
     private final String uuid = UUID.randomUUID().toString();
 
     private static final String esperEngineName = "debs-q1-plug";
@@ -162,6 +162,7 @@ public final class DebsQ1EsperPlug implements StreamTask, InitableTask, Windowab
 
             this.eps.destroy();
 
+            taskCoordinator.commit(TaskCoordinator.RequestScope.CURRENT_TASK);
             taskCoordinator.shutdown(TaskCoordinator.RequestScope.CURRENT_TASK);
 
             if(!stopped) {
