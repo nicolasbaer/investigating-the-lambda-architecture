@@ -18,7 +18,7 @@ import time
 import json
 
 from docopt import docopt
-from pymongo import MongoClient, ASCENDING
+from pymongo import MongoClient, ASCENDING, DESCENDING
 import requests
 
 host = "localhost"
@@ -45,6 +45,14 @@ def create_indexes():
             indexes.append((key, ASCENDING))
         results.create_index(indexes)
         baseline.create_index(indexes)
+
+    results.create_index("ts_start")
+    results.create_index("sys_time")
+    results.create_index([("ts_start", ASCENDING), ("sys_time", ASCENDING)])
+
+    baseline.create_index("ts_start")
+    baseline.create_index("sys_time")
+    baseline.create_index([("ts_start", ASCENDING), ("sys_time", ASCENDING)])
 
     health.create_index([("start", ASCENDING), ("stop", ASCENDING)])
 
@@ -188,6 +196,9 @@ def store_node_failures(shutdown_path, parallelism):
     db = client[db_name]
     health_db = db[health_col_name]
 
+    # clear health db
+    health_db.remove({})
+
     file_name = "fail_%s.log"
 
     for i in range(0, parallelism):
@@ -224,6 +235,103 @@ def store_node_failures(shutdown_path, parallelism):
                     health_db.insert(latest_entry)
 
 
+def create_throughput_health_histogram(start, stop, parallelism, file):
+    interval = (stop - start) / 500
+    if interval < 2:
+        interval = 2
+
+    ts = start
+
+    histogramm = open(file, "w")
+
+    while ts <= stop:
+        ts_start = ts
+        ts_end = interval + ts_start
+
+        throughput = get_throughput(ts_start, ts_end)
+        health = get_healthyness(ts_start, ts_end, parallelism)
+
+        line = "%s,%s,%s\n" % ((ts_end - start) / 1000, throughput, health)
+        histogramm.write(line)
+
+        ts += interval
+
+    histogramm.close()
+
+
+def create_time_window_diagram(start, stop, parallelism, file, file_total):
+    diagram = open(file, "w")
+    total_out = open(file_total, "w")
+
+    client = MongoClient(host)
+    db = client[db_name]
+    results = db[result_col_name]
+    baseline = db[baseline_col_name]
+    health = db[health_col_name]
+
+    # get all time windows
+    windows_start = results.find({}).sort("ts_start", ASCENDING).distinct("ts_start")
+    time_windows_count = len(windows_start)
+
+    total_precision_entries = 0
+    total_precision_possible = 0
+    total_recall_possible = 0
+
+    for i in range(0, time_windows_count):
+        window_start = windows_start[i]
+        first_window = results.find({"ts_start": window_start}).sort("sys_time", ASCENDING).limit(1)[0]
+        last_window = results.find({"ts_start": window_start}).sort("sys_time", DESCENDING).limit(1)[0]
+        first_sys_time = first_window["sys_time"]
+        last_sys_time = last_window["sys_time"]
+        first_window_time = first_window["ts_start"]
+        last_window_time = first_window["ts_end"]
+
+        if i+1 < time_windows_count:
+            start_next_window = results.find({"ts_start": windows_start[i+1]}).sort("sys_time", ASCENDING).limit(1)[0]
+            if start_next_window["sys_time"] > last_sys_time:
+                last_sys_time = start_next_window["sys_time"]
+
+        query = {"ts_start": first_window_time, "ts_end": last_window_time}
+        max_entries = results.find(query).count()
+
+        precise_entries = 0
+        for r in results.find(query):
+            del r['sys_time']
+            del r['_id']
+
+            p = baseline.find(r).count()
+
+            if p > 0:
+                precise_entries += 1
+                total_precision_entries += 1
+
+            total_precision_possible += 1
+
+
+        precision = float(precise_entries) / float(max_entries)
+        recall_max = baseline.find(query).count()
+        total_recall_possible += recall_max
+        recall = float(precise_entries) / float(recall_max)
+
+        throughput = get_throughput(first_sys_time, last_sys_time)
+        health = get_healthyness(first_sys_time, last_sys_time, parallelism)
+
+        line = "%s,%s,%s,%s,%s\n" % (i, precision, recall, throughput, health)
+        diagram.write(line)
+        print line
+
+    # calculate total
+    throughput = get_throughput(start, stop)
+    health = get_healthyness(start, stop, parallelism)
+
+    precision_total = float(total_precision_entries) / float(total_precision_possible)
+    recall_total = float(total_precision_entries) / float(total_recall_possible)
+
+    line = "%s,%s,%s,%s,%s" % (stop - start, precision_total, recall_total, throughput, health)
+    total_out.write(line)
+
+    total_out.close()
+    diagram.close()
 
 if __name__ == "__main__":
     arguments = docopt(__doc__)
@@ -252,40 +360,11 @@ if __name__ == "__main__":
 
     print "range to analyze: %s - %s" % (ts_start, ts_end)
 
+    print "creating histogram"
+    f_histogram = os.path.join(result_path, "kpi_throughput_health_histogram.csv")
+    create_throughput_health_histogram(ts_start, ts_end, parallelism, f_histogram)
 
-
-
-
-    # calculate histogram data
-    f = open(os.path.join(result_path, "kpi_histogram.csv"), "w")
-
-    start = ts_start
-    while start < ts_end:
-        end = start + interval
-
-        if end > ts_end:
-            end = ts_end
-
-        precision, recall = get_precision_recall(start, end)
-        throughput = get_throughput(start, end)
-        healthyness = get_healthyness(start, end, parallelism)
-
-        ts = end - ts_start
-
-        f.write("%s,%s,%s,%s,%s\n" % (ts / 1000, precision, recall, throughput, healthyness))
-        print "%s,%s,%s,%s,%s\n" % (ts / 1000, precision, recall, throughput, healthyness)
-
-        start = start + interval
-
-    f.close()
-
-    # calculate over-all data
-    precision, recall = get_precision_recall(ts_start, ts_end)
-    throughput = get_throughput(ts_start, ts_end)
-    healthyness = get_healthyness(ts_start, ts_end, parallelism)
-
-    f = open(os.path.join(result_path, "kpi_total.csv"), "w")
-    f.write("%s,%s,%s,%s,%s\n" % (ts / 1000, precision, recall, throughput, healthyness))
-
-
-    f.close()
+    print "creating timewindow diagram"
+    f_time_window = os.path.join(result_path, "kpi_time_window_diagram.csv")
+    f_total = os.path.join(result_path, "kpi_total.csv")
+    create_time_window_diagram(ts_start, ts_end, parallelism, f_time_window, f_total)

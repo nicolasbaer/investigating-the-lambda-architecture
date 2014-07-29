@@ -69,6 +69,7 @@ then
   echo "$kill_probability" > $experiment_home/runtime/kill_probability
   echo "$kill_interval" > $experiment_home/runtime/kill_interval
   echo "$realive_interval" > $experiment_home/runtime/realive_interval
+  echo "$kill_concurrent_nodes" > $experiment_home/runtime/concurrent_nodes_kill
 
 
   # start producer and node failure simulation on each node:
