@@ -70,8 +70,9 @@ def coordinate_node_failure(node_num, kill_probability, interval, exec_path, par
             os.makedirs(path)
 
     while not check_shutdown(exec_path, master):
-        rand = random.random()
+        time.sleep(interval + random.randrange(0, 10))
 
+        rand = random.random()
         if rand < kill_probability:
 
             killed_nodes = set()
@@ -83,8 +84,6 @@ def coordinate_node_failure(node_num, kill_probability, interval, exec_path, par
                     killed_nodes.add(node)
 
             killed_nodes.clear()
-
-        time.sleep(interval + random.randrange(0, 10))
 
 
 def worker_node_failure(node_num, exec_path, log_path, realive_interval, master):
@@ -131,8 +130,6 @@ def worker_node_failure(node_num, exec_path, log_path, realive_interval, master)
 
 if __name__ == "__main__":
     arguments = docopt(__doc__)
-
-    print arguments
 
     shutdown_path = os.path.expandvars(os.path.expanduser(arguments['<shutdown_path>']))
     exec_path = os.path.expandvars(os.path.expanduser(arguments['<exec_path>']))

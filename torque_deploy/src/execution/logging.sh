@@ -34,6 +34,6 @@ echo $jetty_pid >> $LAMBDA_APP_PIDS/pidfile
 
 # start logstash
 cd $LAMBDA_APP_HOME/logstash
-nohup bin/logstash -e 'input { collectd { } } output { elasticsearch_http { add_field => [ "topic", "resources"] } }' > $LAMBDA_APP_LOGS/logstash.log 2>&1 &
+nohup bin/logstash -e 'input { collectd { } } output { elasticsearch_http { host => "localhost" } }' > $LAMBDA_APP_LOGS/logstash.log 2>&1 &
 logstash_pid=$!
 echo $logstash_pid >> $LAMBDA_APP_PIDS/pidfile

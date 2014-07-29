@@ -76,6 +76,9 @@ then
   mkdir -p $failure_log_folder
   srun $lambda_home_exec/start_producer.sh $experiment $dataset $dataset_name $ticksPerMs $start_time $dataset_start_time $kill_probability $kill_interval $parallelism $shutdown_folder $failure_log_folder $realive_interval $nodefile $kill_concurrent_nodes
 
+  # calculate kpis
+  $lambda_home_exec/collect_kpis.sh $question $dataset $nodefile $parallelism $start_time $dataset_start_time $ticksPerMs
+
   # store results
   $lambda_home_exec/store_result.sh $question
 
