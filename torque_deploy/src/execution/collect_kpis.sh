@@ -18,7 +18,4 @@ mkdir -p $result_folder
 
 $mongoimport_exec --db lambda --collection baseline --file $lambda_home_dataset/$dataset/baseline/$question/baseline.json
 
-
-echo "$lambda_home_pyenv/bin/python $lambda_home_exec/collect_kpis.py $result_folder $experiment_home/failure $sys_start_time $data_start_time $ticks_per_ms $parallelism"
-
-$lambda_home_pyenv/bin/python $lambda_home_exec/collect_kpis.py "$result_folder" "$experiment_home/failure" "$sys_start_time" "$data_start_time" "$ticks_per_ms" "$parallelism"
+$lambda_home_pyenv/bin/python $lambda_home_exec/collect_kpis.py "$result_folder" "$experiment_home/failure" "$sys_start_time" "$data_start_time" "$ticks_per_ms" "$parallelism" "$question"

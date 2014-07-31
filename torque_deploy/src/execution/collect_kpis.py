@@ -4,7 +4,7 @@
 This script is responsible to cellect key performance indicators for an experiment
 
 Usage:
-  collect_kpis.py <result_path> <shutdown_path> <sys_start_time> <data_start_time> <ticks_per_ms> <parallelism>
+  collect_kpis.py <result_path> <shutdown_path> <sys_start_time> <data_start_time> <ticks_per_ms> <parallelism> <question>
   collect_kpis.py -h | --help
 
 Options:
@@ -236,22 +236,24 @@ def store_node_failures(shutdown_path, parallelism):
 
 
 def create_throughput_health_histogram(start, stop, parallelism, file):
-    interval = (stop - start) / 500
+    start_s = start / 1000
+    stop_s = stop / 1000
+    interval = (stop_s - start_s) / 500
     if interval < 2:
         interval = 2
 
-    ts = start
+    ts = start_s
 
     histogramm = open(file, "w")
 
-    while ts <= stop:
+    while ts <= stop_s:
         ts_start = ts
         ts_end = interval + ts_start
 
-        throughput = get_throughput(ts_start, ts_end)
-        health = get_healthyness(ts_start, ts_end, parallelism)
+        throughput = get_throughput(ts_start * 1000, ts_end * 1000)
+        health = get_healthyness(ts_start * 1000, ts_end * 1000, parallelism)
 
-        line = "%s,%s,%s\n" % ((ts_end - start) / 1000, throughput, health)
+        line = "%s,%s,%s\n" % ((ts_end - start_s), throughput, health)
         histogramm.write(line)
 
         ts += interval
@@ -294,6 +296,9 @@ def create_time_window_diagram(start, stop, parallelism, file, file_total):
         query = {"ts_start": first_window_time, "ts_end": last_window_time}
         max_entries = results.find(query).count()
 
+        if max_entries == 0 or (last_sys_time - first_sys_time) == 0:
+            continue
+
         precise_entries = 0
         for r in results.find(query):
             del r['sys_time']
@@ -306,6 +311,7 @@ def create_time_window_diagram(start, stop, parallelism, file, file_total):
                 total_precision_entries += 1
 
             total_precision_possible += 1
+
 
 
         precision = float(precise_entries) / float(max_entries)
@@ -343,6 +349,8 @@ if __name__ == "__main__":
     ts_start_data = int(arguments['<data_start_time>'])
     tickes_per_ms = int(arguments['<ticks_per_ms>'])
     parallelism = int(arguments['<parallelism>'])
+
+    question = arguments['<question>']
 
     ts_end = int(get_last_timestamp())
 
