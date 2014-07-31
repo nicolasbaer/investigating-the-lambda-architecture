@@ -69,9 +69,14 @@ def coordinate_node_failure(node_num, kill_probability, interval, exec_path, par
         if not os.path.exists(path):
             os.makedirs(path)
 
+    last_ts = time.time()
     while not check_shutdown(exec_path, master):
-        time.sleep(interval + random.randrange(0, 10))
+        time.sleep(5)
 
+        if (time.time() - last_ts) < interval + random.randrange(0, 10):
+            continue
+
+        last_ts = time.time()
         rand = random.random()
         if rand < kill_probability:
 
