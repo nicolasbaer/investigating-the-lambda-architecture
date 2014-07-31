@@ -78,7 +78,7 @@ public final class SystemTimeSynchronizer implements EventHandler<IDataEntry> {
                 }
             } else{
                 long lag = data.getTimestamp() - currentDataTime;
-                logger.info(performance, "topic={} lag={} currentSystemTime={} currentDataTime={}", lagTopic, lag, currentSystemTime, data.getTimestamp());
+                //logger.info(performance, "topic={} lag={} currentSystemTime={} currentDataTime={}", lagTopic, lag, currentSystemTime, data.getTimestamp());
             }
         }
 
