@@ -126,4 +126,9 @@ public final class SRBenchDataEntry implements IDataEntry, Serializable{
     public Map<String, Object> getMap() {
         return this.toMap();
     }
+
+    @Override
+    public String getTypeStr() {
+        return measurement;
+    }
 }

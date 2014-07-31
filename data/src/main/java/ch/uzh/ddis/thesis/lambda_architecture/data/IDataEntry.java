@@ -11,4 +11,5 @@ public interface IDataEntry extends Partitioned, Timestamped, Identifiable, Topi
 
     public Map<String, Object> getMap();
 
+    public String getTypeStr();
 }

@@ -10,6 +10,7 @@ import ch.uzh.ddis.thesis.lambda_architecture.data.Dataset;
 import ch.uzh.ddis.thesis.lambda_architecture.speed.bolt.ResultBolt;
 import ch.uzh.ddis.thesis.lambda_architecture.speed.bolt.SRBench.*;
 import ch.uzh.ddis.thesis.lambda_architecture.speed.bolt.debs.DebsQ1HouseBolt;
+import ch.uzh.ddis.thesis.lambda_architecture.speed.bolt.debs.DebsQ3HouseBolt;
 import ch.uzh.ddis.thesis.lambda_architecture.speed.grouping.PartitionGrouping;
 import ch.uzh.ddis.thesis.lambda_architecture.speed.spout.NettySpout;
 import com.beust.jcommander.JCommander;
@@ -94,6 +95,8 @@ public class TopologyHelper {
             builder.setBolt(this.question, new DebsQ1HouseBolt(redisHost, 60l), partitions).customGrouping("netty", new PartitionGrouping());
         }  else if(this.question.equals("debs-q1-plug-120min")){
             builder.setBolt(this.question, new DebsQ1HouseBolt(redisHost, 120l), partitions).customGrouping("netty", new PartitionGrouping());
+        } else if(this.question.equals("debs-q3-house-15min")) {
+            builder.setBolt(this.question, new DebsQ3HouseBolt(redisHost, 15l), partitions).customGrouping("netty", new PartitionGrouping());
         } else{
             System.out.println("Could not find any routine for the given question `" + question + "`");
             System.exit(1);

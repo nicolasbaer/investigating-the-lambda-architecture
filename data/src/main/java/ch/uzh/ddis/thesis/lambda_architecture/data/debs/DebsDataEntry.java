@@ -117,4 +117,9 @@ public class DebsDataEntry implements IDataEntry {
     public Map<String, Object> getMap() {
         return this.toMap();
     }
+
+    @Override
+    public String getTypeStr() {
+        return type.name();
+    }
 }
