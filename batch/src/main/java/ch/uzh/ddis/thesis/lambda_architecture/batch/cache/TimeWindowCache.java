@@ -7,17 +7,19 @@ import org.apache.samza.storage.kv.Entry;
 import java.util.Iterator;
 
 /**
+ * This class is depricated as it was used to provide an alternative checkpoint solution for Samza.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  *
  * General Interface for all implementations of time window caches.
  */
+@Deprecated
 public interface TimeWindowCache<E extends Timestamped> {
 
     /**
      * Caches the given message. This step will also decide to flush messages from the cache in order
      * to ensure the time window is on track.
      * @param message message to cache
-     * @param timestamp timestamp of the message to cache
      */
     public void cache(E message);
 

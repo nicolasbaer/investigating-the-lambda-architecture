@@ -15,6 +15,10 @@ import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 /**
+ * The netty client connects to the coordination layer and pulls batches of messages.
+ * During runtime it was observed that this implementation might timeout at a certain point, it is yet unclear
+ * what is really going on, but a heartbeat detects these failures and resumes the communication.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class NettyClient extends ChannelInboundHandlerAdapter implements Serializable {
@@ -53,7 +57,7 @@ public class NettyClient extends ChannelInboundHandlerAdapter implements Seriali
             }
         }
 
-        ctx.channel().writeAndFlush("next");
+        ctx.channel().writeAndFlush("fetch");
     }
 
 
@@ -65,7 +69,7 @@ public class NettyClient extends ChannelInboundHandlerAdapter implements Seriali
         this.channel = ctx.channel();
 
         // initiate data transfer
-        this.channel.writeAndFlush("next");
+        this.channel.writeAndFlush("fetch");
 
 
         this.heartbeat = new NettyHeartbeat(this, nettyQueue);

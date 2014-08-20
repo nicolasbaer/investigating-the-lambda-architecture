@@ -9,6 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * This grouping strategy enables spouts to distribute messages according to the unified partitioning strategy
+ * e.g. constant hashing. This is important, since any other grouping strategy will not lead to the exact same
+ * results as the batch layer produces.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class PartitionGrouping implements CustomStreamGrouping{

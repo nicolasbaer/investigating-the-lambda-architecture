@@ -21,7 +21,7 @@ public class SlidingWindowTest {
             long t = start + i;
             window.addEvent(new SimpleTimestamp(t));
 
-            long first = window.getWindowStartEvent().getTimestamp();
+            long first = window.getWindowOffsetEvent().getTimestamp();
             if(first != currentFirst){
                 firstTimestamps.add(first);
                 currentFirst = first;

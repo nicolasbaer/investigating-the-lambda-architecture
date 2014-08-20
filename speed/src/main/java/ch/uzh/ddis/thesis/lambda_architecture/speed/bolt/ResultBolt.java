@@ -19,6 +19,9 @@ import java.net.UnknownHostException;
 import java.util.Map;
 
 /**
+ * This bolt receives incoming tuples and stores the field `result` in MongoDB.
+ * The result has to be a map.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class ResultBolt extends BaseRichBolt {

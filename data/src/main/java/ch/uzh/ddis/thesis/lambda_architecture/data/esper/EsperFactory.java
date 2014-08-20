@@ -10,6 +10,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * The esper factory defines the types an esper engine may receive. It is used to predefine the types that are
+ * then send to esper as maps.
+ * The logic here encapsulates the structure of the data sets used for the experiments.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class EsperFactory {

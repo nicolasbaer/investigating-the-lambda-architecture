@@ -8,6 +8,9 @@ import java.io.Serializable;
 import java.util.concurrent.ArrayBlockingQueue;
 
 /**
+ * Netty clients are asynchronous and in case of any failure a new client is started to resume operations.
+ * Therefore the netty queue provides a synchronized queue for all clients started.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class NettyQueue extends ChannelInboundHandlerAdapter implements Serializable {

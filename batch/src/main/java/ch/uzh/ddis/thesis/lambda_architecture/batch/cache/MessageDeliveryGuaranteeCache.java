@@ -11,6 +11,8 @@ import org.apache.samza.storage.kv.KeyValueStore;
 import java.nio.charset.StandardCharsets;
 
 /**
+ * This class is depricated as it was used to provide an alternative checkpoint solution for Samza.
+ *
  * Simple Cache mechanism to check whether a message was already processed.
  * It uses two strategies to accomplish this check:
  * 1. Holds a bloom filter to check fast if this message was not processed.
@@ -19,6 +21,7 @@ import java.nio.charset.StandardCharsets;
  *
  * @param <E> Identifiable message to check
  */
+@Deprecated
 public class MessageDeliveryGuaranteeCache<E extends Identifiable> {
     private final KeyValueStore<String, GenericData> store;
     private final BloomFilter bloomFilter;

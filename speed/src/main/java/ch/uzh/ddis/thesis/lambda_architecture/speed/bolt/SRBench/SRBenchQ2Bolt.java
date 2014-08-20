@@ -33,6 +33,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Storm task to solve the query `precipitation observed once in an hour` on the SRBench data set.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class SRBenchQ2Bolt extends BaseRichBolt {

@@ -24,7 +24,7 @@ public class EsperUpdateListener implements UpdateListener{
 
     @Override
     public void update(EventBean[] newEvents, EventBean[] oldEvents) {
-        // Apparently esper also sends an update if no events were matching.
+        // apparently esper also sends an update if no events were matching.
         if (newEvents != null){
             this.newData = true;
             this.newEventsCache = newEvents;
@@ -32,7 +32,10 @@ public class EsperUpdateListener implements UpdateListener{
         }
     }
 
-
+    /**
+     * Checks whether new results are available.
+     * @return true if new results are available.
+     */
     public boolean hasNewData() {
         return newData;
     }

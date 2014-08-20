@@ -11,11 +11,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
+ * This class is depricated as it was used to provide an alternative checkpoint solution for Samza.
+ *
  * Caches a sliding window using the provided storage.
  * The window is defined with the following range [start, end)
  *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
+@Deprecated
 public class SlidingWindowCache<E extends Timestamped> implements TimeWindowCache<E>{
     private final String keyWindowStart = "window-start";
     private final String keyWindowEnd = "window-end";

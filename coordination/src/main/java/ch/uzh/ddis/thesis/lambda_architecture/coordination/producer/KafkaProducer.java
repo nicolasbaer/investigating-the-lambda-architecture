@@ -16,7 +16,7 @@ import java.util.Properties;
 import java.util.UUID;
 
 /**
- * At it's best a simple wrapper around the kafka API.
+ * At it's best a simple wrapper around the kafka API :)
  */
 public class KafkaProducer implements IProducer{
     private static final Logger logger = LogManager.getLogger();
@@ -50,12 +50,8 @@ public class KafkaProducer implements IProducer{
      */
     public void send(final IDataEntry message){
         KeyedMessage<String, String> keyedMessage = new KeyedMessage<>(topic, message.getPartitionKey(), message.toString());
-        this.messageBuffer.add(keyedMessage);
 
-        if(this.messageBuffer.size() == bufferSize){
-            this.producer.send(this.messageBuffer);
-            this.messageBuffer.clear();
-        }
+        this.producer.send(keyedMessage);
 
         if(this.processCounter == 0){
             this.processWatch = new StopWatch();

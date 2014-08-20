@@ -1,6 +1,8 @@
 package ch.uzh.ddis.thesis.lambda_architecture.data.utils;
 
 /**
+ * Implements a simple round function in order to provide one unified method for all tasks.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public final class Round {

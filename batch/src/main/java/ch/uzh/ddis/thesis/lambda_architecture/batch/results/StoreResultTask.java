@@ -16,6 +16,10 @@ import org.apache.samza.task.*;
 import java.util.Map;
 
 /**
+ * Samza task to store results to the service layer (e.g. mongodb). This task is designed to work with every data set
+ * and every question. It fetches the result from the configured Kafka topic (has to be a map), writes the result
+ * to MongoDB and checkpoints after each result is stored.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class StoreResultTask implements InitableTask, WindowableTask, StreamTask {
@@ -62,11 +66,7 @@ public class StoreResultTask implements InitableTask, WindowableTask, StreamTask
 
         String stream = incomingMessageEnvelope.getSystemStreamPartition().getStream();
         BasicDBObject doc = new BasicDBObject(result);
-
-        // check for duplicate entry before insert. Samza only provides at least once messaging guarantee, therefore we have to manage the unique results ourselves.
-        if(collection.findOne(doc) == null){
-            collection.save(doc);
-        }
+        collection.save(doc);
 
         taskCoordinator.commit(TaskCoordinator.RequestScope.CURRENT_TASK);
 

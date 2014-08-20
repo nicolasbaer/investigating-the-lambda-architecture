@@ -33,6 +33,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Storm task to solve the query `hurricane observed` on the SRBench data set.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class SRBenchQ3Bolt extends BaseRichBolt {

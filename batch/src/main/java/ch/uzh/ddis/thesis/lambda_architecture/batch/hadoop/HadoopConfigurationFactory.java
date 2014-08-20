@@ -12,6 +12,10 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 
 /**
+ * Abstracts the burden of dealing with the hadoop configuration properties.
+ * Pig will usually just ignore the configuration files, therefore we have to set the following property:
+ * `pig.use.overriden.hadoop.configs`. I had quite some fun finding this out - you shall not change it!
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public final class HadoopConfigurationFactory {

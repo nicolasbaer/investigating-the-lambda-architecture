@@ -3,6 +3,8 @@ package ch.uzh.ddis.thesis.lambda_architecture.coordination.producer;
 import ch.uzh.ddis.thesis.lambda_architecture.data.IDataEntry;
 
 /**
+ * The producer interface defines the behavior to produce messages to other layers.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public interface IProducer {

@@ -35,6 +35,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Storm task to solve the query `load prediction` on the debs data set.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class DebsQ1PlugBolt extends BaseRichBolt {

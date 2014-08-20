@@ -13,6 +13,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
+ * The netty producer provides the bootstrap capabilities to communicate with clients from the speed layer
+ * that want to access the in-memory message queue.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class NettyProducer extends ChannelInboundHandlerAdapter implements IProducer {
@@ -27,11 +30,10 @@ public class NettyProducer extends ChannelInboundHandlerAdapter implements IProd
     private ChannelFuture channelFuture;
 
     private NettyBuffer buffer;
-
-
     public NettyProducer(int port){
         this.port = port;
     }
+
 
     @Override
     public void open(){

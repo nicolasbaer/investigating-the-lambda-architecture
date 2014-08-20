@@ -15,7 +15,9 @@ public class SlidingWindow<E extends Timestamped> implements TimeWindow<E>{
     private long currentWindowStart = 0;
     private long currentWindowEnd = 0;
 
+    // the start event keeps the start of the next sliding window in cache to provide offset guarantees.
     private E startEvent;
+    private long startEventTimestamp;
 
     /**
      * Initializes a sliding window with the given size and range.
@@ -32,14 +34,16 @@ public class SlidingWindow<E extends Timestamped> implements TimeWindow<E>{
     public void addEvent(E message) {
         if(this.startEvent == null){
             this.startEvent = message;
+            this.startEventTimestamp = message.getTimestamp();
             this.resetWindow(message.getTimestamp());
 
             return;
         }
 
-        long startDiff = message.getTimestamp() - this.startEvent.getTimestamp();
+        long startDiff = message.getTimestamp() - this.startEventTimestamp;
         if(startDiff >= this.rangeMs){
             this.startEvent = message;
+            this.startEventTimestamp = message.getTimestamp();
         }
 
         if(message.getTimestamp() > currentWindowEnd){
@@ -76,7 +80,14 @@ public class SlidingWindow<E extends Timestamped> implements TimeWindow<E>{
 
 
     @Override
-    public E getWindowStartEvent() {
+    public E getWindowOffsetEvent() {
         return this.startEvent;
+    }
+
+
+    @Override
+    public void restoreWindow(long timestamp) {
+        this.resetWindow(timestamp);
+        this.startEventTimestamp = timestamp;
     }
 }

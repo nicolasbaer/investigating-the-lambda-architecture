@@ -4,8 +4,11 @@ import ch.uzh.ddis.thesis.lambda_architecture.data.serde.GenericData;
 import org.apache.samza.storage.kv.KeyValueStore;
 
 /**
+ * This class is depricated as it was used to provide an alternative checkpoint solution for Samza.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
+@Deprecated
 public class RestoreManager {
     private final KeyValueStore<String, GenericData> store;
     private boolean beginning;

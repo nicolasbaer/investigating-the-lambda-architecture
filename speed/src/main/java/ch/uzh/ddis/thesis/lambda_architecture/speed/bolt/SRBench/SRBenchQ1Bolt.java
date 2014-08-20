@@ -33,6 +33,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Storm task to solve the query `rainfall observed once an hour` on the SRBench data set.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class SRBenchQ1Bolt extends BaseRichBolt {

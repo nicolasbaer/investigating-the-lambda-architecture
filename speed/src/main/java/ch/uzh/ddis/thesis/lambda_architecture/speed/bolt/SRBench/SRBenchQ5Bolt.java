@@ -34,6 +34,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Storm task to solve the query `observing a blizzard` on the SRBench data set.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class SRBenchQ5Bolt extends BaseRichBolt {

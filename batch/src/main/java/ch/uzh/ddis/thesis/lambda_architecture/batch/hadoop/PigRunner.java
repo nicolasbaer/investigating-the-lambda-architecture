@@ -14,6 +14,8 @@ import java.io.InputStream;
 import java.util.Map;
 
 /**
+ * Provides an abstraction to run pig scripts in a very simple way.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public final class PigRunner {

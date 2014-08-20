@@ -1,4 +1,4 @@
-package ch.uzh.ddis.thesis.lambda_architecture.batch.debs;
+package ch.uzh.ddis.thesis.lambda_architecture.batch.DEBS;
 
 import org.junit.Test;
 

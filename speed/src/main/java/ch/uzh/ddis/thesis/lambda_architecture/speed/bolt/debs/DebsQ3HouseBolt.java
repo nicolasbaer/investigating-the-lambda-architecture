@@ -34,6 +34,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Storm task to solve the query `average load` on the debs data set.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class DebsQ3HouseBolt extends BaseRichBolt {

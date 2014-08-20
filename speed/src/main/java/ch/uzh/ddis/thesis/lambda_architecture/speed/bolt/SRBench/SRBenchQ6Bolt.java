@@ -35,6 +35,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Storm task to solve the query `extremely low visibility` on the SRBench data set.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class SRBenchQ6Bolt extends BaseRichBolt {

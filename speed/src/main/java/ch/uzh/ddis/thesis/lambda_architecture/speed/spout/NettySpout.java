@@ -8,7 +8,6 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
 import ch.uzh.ddis.thesis.lambda_architecture.data.IDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.IDataFactory;
-import ch.uzh.ddis.thesis.lambda_architecture.shutdown_handler.ShutdownHandler;
 import com.ecyrd.speed4j.StopWatch;
 import com.google.common.base.Optional;
 import com.google.common.net.HostAndPort;
@@ -31,6 +30,12 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * The netty spout is responsible to consume messages from the coordination layer and send these messages to
+ * the topology. The spout follows a non-blocking design, where netty consumers are started in a seperate thread
+ * and write messages to a synchronized queue (NettyQueue). Each time Storm calls the nextTuple method of this
+ * spout, the spout will check whether new messages are available in this queue and transfer one each time the function
+ * is called.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class NettySpout extends BaseRichSpout {
@@ -91,6 +96,12 @@ public class NettySpout extends BaseRichSpout {
         this.connect();
     }
 
+    /**
+     * Manages the connection to the coordination layer. Please note that this is basically a non-blocking
+     * recursive function. Each time a consumer is started, a listener is attached, that calls this method in
+     * case a failure occured and it gets destroyed. Therefore the connect manages the asynchronous connection
+     * bootstrap.
+     */
     private void connect(){
         final HostAndPort host = this.hosts.get(context.getThisTaskIndex());
 
@@ -164,6 +175,9 @@ public class NettySpout extends BaseRichSpout {
 
     }
 
+    /**
+     * This method is periodically called by Storm and will emit tuples to the topology in case there are any available.
+     */
     @Override
     public void nextTuple() {
         Optional<String> optionalData = Optional.fromNullable(this.nettyQueue.queue.poll());
@@ -186,23 +200,33 @@ public class NettySpout extends BaseRichSpout {
             }
         } else {
             if (!stopped && lastDataEmitted != 0 && System.currentTimeMillis() - lastDataEmitted > shutdownWaitThreshold) {
-                ShutdownHandler.handleShutdown("layer=speed");
                 this.close();
                 this.stopped = true;
             }
         }
     }
 
+    /**
+     * Acknowledgements are not supported by this spout. Also replaying messages is not possible.
+     * @param msgId
+     */
     @Override
     public void ack(Object msgId) {
         // no-op
     }
 
+    /**
+     * Acknowledgements are not supported by this spout. Also replaying messages is not possible.
+     * @param msgId
+     */
     @Override
     public void fail(Object msgId) {
         // no-op
     }
 
+    /**
+     * Closes the connection to the coordination layer and terminates the spout.
+     */
     @Override
     public void close() {
         logger.info("close spout called");

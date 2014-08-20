@@ -8,6 +8,9 @@ import org.apache.logging.log4j.MarkerManager;
 import java.util.UUID;
 
 /**
+ * The heartbeat checks if the netty client has reached a timeout and stopped consuming messages from the coordination
+ * layer. If that happens the heartbeat will resume the consumer.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class NettyHeartbeat implements Runnable{

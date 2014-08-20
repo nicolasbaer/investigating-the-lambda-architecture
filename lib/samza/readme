@@ -1,0 +1,4 @@
+patched samza library to provide the following functionality:
+    - Offset management on a partition basis within a StreamTask
+
+see SAMZA-23 for further information

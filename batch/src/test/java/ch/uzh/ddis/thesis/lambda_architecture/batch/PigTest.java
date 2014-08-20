@@ -7,6 +7,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.pig.ExecType;
 import org.apache.pig.PigServer;
 import org.apache.pig.impl.PigContext;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.BufferedWriter;
@@ -24,6 +25,7 @@ public class PigTest {
 
 
 
+    @Ignore
     @Test
     public void testHDFSWrite(){
 

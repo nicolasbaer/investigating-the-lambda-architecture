@@ -1,14 +1,12 @@
-package ch.uzh.ddis.thesis.lambda_architecture.batch.debs;
+package ch.uzh.ddis.thesis.lambda_architecture.batch.DEBS;
 
-import ch.uzh.ddis.thesis.lambda_architecture.data.SimpleTimestamp;
-import ch.uzh.ddis.thesis.lambda_architecture.data.Timestamped;
+import ch.uzh.ddis.thesis.lambda_architecture.data.TimestampedOffset;
 import ch.uzh.ddis.thesis.lambda_architecture.data.debs.DebsDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperFactory;
 import ch.uzh.ddis.thesis.lambda_architecture.data.esper.EsperUpdateListener;
 import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TimeWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.data.timewindow.TumblingWindow;
 import ch.uzh.ddis.thesis.lambda_architecture.data.utils.Round;
-import ch.uzh.ddis.thesis.lambda_architecture.shutdown_handler.ShutdownHandler;
 import com.ecyrd.speed4j.StopWatch;
 import com.espertech.esper.client.*;
 import com.espertech.esper.client.time.CurrentTimeEvent;
@@ -34,6 +32,8 @@ import java.util.HashMap;
 import java.util.UUID;
 
 /**
+ * Samza task to solve the query `load prediction` on the debs data set.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public final class DebsQ1EsperHouse implements StreamTask, InitableTask, WindowableTask {
@@ -41,7 +41,7 @@ public final class DebsQ1EsperHouse implements StreamTask, InitableTask, Windowa
     private static final Marker performance = MarkerManager.getMarker("PERFORMANCE");
     private static final Marker remoteDebug = MarkerManager.getMarker("DEBUGFLUME");
 
-    private static final long shutdownWaitThreshold = (1000 * 60 * 2); // 2 minutes
+    private static final long shutdownWaitThreshold = (1000 * 60 * 5); // 2 minutes
     private final String uuid = UUID.randomUUID().toString();
 
     private static final String esperEngineName = "debs-q1-house";
@@ -64,15 +64,14 @@ public final class DebsQ1EsperHouse implements StreamTask, InitableTask, Windowa
 
     private EPRuntime esper;
     private EPServiceProvider eps;
-    private TimeWindow<Timestamped> timeWindow;
+    private TimeWindow<TimestampedOffset> timeWindow;
     private EsperUpdateListener esperUpdateListener;
     private String query;
 
     private long lastTimestamp = 0;
-    private long lastDataReceived;
+    private long lastDataReceived = 0;
     private long processCounter = 0;
     private StopWatch processWatch;
-    private boolean stopped = false;
 
     @Override
     public void init(Config config, TaskContext taskContext) throws Exception {
@@ -95,24 +94,27 @@ public final class DebsQ1EsperHouse implements StreamTask, InitableTask, Windowa
     @Override
     public void process(IncomingMessageEnvelope incomingMessageEnvelope, MessageCollector messageCollector, TaskCoordinator taskCoordinator) {
         DebsDataEntry entry = new DebsDataEntry((String) incomingMessageEnvelope.getMessage());
+        TimestampedOffset timestampedOffset = new TimestampedOffset(entry, incomingMessageEnvelope.getOffset());
 
         if(!firstTimestampSaved){
             this.firstTimestampStore.put(firstTimestampKey, entry.getTimestamp());
             firstTimestampSaved = true;
 
-            timeWindow.addEvent(entry);
+            logger.info(performance, "topic=firstTimestamp ts={} partition={} offset={} container={}", entry.getTimestamp(), incomingMessageEnvelope.getSystemStreamPartition().getPartition().getPartitionId(), incomingMessageEnvelope.getOffset(), System.getenv("SAMZA_CONTAINER_NAME"));
+
+            timeWindow.addEvent(timestampedOffset);
         }
 
         this.sendTimeEvent(entry.getTimestamp());
         this.esper.sendEvent(entry.getMap(), entry.getType().toString());
 
-        if(!this.timeWindow.isInWindow(entry)) {
+        if(!this.timeWindow.isInWindow(timestampedOffset)) {
             this.processNewData(messageCollector);
 
-            taskCoordinator.commit(TaskCoordinator.RequestScope.CURRENT_TASK);
+            taskCoordinator.commit(TaskCoordinator.RequestScope.CURRENT_TASK, this.timeWindow.getWindowOffsetEvent().getOffset());
         }
 
-        this.timeWindow.addEvent(entry);
+        this.timeWindow.addEvent(timestampedOffset);
 
         this.processCounter++;
         if(this.processCounter % 1000 == 0){
@@ -130,7 +132,7 @@ public final class DebsQ1EsperHouse implements StreamTask, InitableTask, Windowa
             long timestamp = optionalTimeWindowStart.get();
             this.sendTimeEvent(timestamp);
             this.firstTimestampSaved = true;
-            this.timeWindow.addEvent(new SimpleTimestamp(timestamp));
+            this.timeWindow.restoreWindow(timestamp);
 
             logger.info(remoteDebug, "topic=samzaFirstTimestampRestore restored={} uuid={}", optionalTimeWindowStart.get());
         }
@@ -157,17 +159,12 @@ public final class DebsQ1EsperHouse implements StreamTask, InitableTask, Windowa
             this.sendTimeEvent(Long.MAX_VALUE);
             this.processNewData(messageCollector);
 
-            logger.info(performance, "topic=samzashutdown uuid={} lastData={}", uuid, lastDataReceived);
+            logger.info(performance, "topic=samzashutdown uuid={} lastData={} current={}", uuid, lastDataReceived, currentTime);
 
             this.eps.destroy();
 
             taskCoordinator.commit(TaskCoordinator.RequestScope.CURRENT_TASK);
             taskCoordinator.shutdown(TaskCoordinator.RequestScope.CURRENT_TASK);
-
-            if(!stopped) {
-                ShutdownHandler.handleShutdown("layer=batch");
-                stopped = true;
-            }
         }
     }
 

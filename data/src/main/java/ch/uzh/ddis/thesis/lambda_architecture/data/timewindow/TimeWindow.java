@@ -17,11 +17,11 @@ public interface TimeWindow<E extends Timestamped> {
     public long getWindowStart();
 
 
-    public E getWindowStartEvent();
+    public E getWindowOffsetEvent();
 
 
     public long getWindowEnd();
 
-
+    public void restoreWindow(long timestamp);
 
 }

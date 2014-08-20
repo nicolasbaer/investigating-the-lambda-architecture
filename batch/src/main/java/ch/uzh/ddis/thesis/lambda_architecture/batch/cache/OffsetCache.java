@@ -5,6 +5,8 @@ import com.google.common.base.Optional;
 import org.apache.samza.storage.kv.KeyValueStore;
 
 /**
+ * This class is depricated as it was used to provide an alternative checkpoint solution for Samza.
+ *
  * Offset cache to check whether an offset was already consumed.
  * According to the Kafka API the offset will grow over time,
  * a simple check involves storing the last consumed offset into
@@ -12,6 +14,7 @@ import org.apache.samza.storage.kv.KeyValueStore;
  *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
+@Deprecated
 public class OffsetCache {
     private final static String lastOffsetId = "lastOffset";
     private final KeyValueStore<String, GenericData> store;

@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<configuration>
+    <property>
+        <name>yarn.resourcemanager.am.max-attempts</name>
+        <value>999999999</value>
+    </property>
+    
+<!--    <property>
+        <name>yarn.resourcemanager.container.liveness-monitor.interval-ms</name>
+        <value>60000</value>
+    </property>
+    <property>
+        <name>yarn.nm.liveness-monitor.expiry-interval-ms</name>
+        <value>60000</value>
+    </property>-->
+</configuration>

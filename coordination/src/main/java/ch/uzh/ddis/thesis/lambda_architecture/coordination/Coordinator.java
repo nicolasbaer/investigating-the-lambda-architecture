@@ -1,6 +1,8 @@
 package ch.uzh.ddis.thesis.lambda_architecture.coordination;
 
+import ch.uzh.ddis.thesis.lambda_architecture.coordination.inputreader.CSVAdaptor;
 import ch.uzh.ddis.thesis.lambda_architecture.coordination.producer.*;
+import ch.uzh.ddis.thesis.lambda_architecture.coordination.timesynchronizer.SystemTimeSynchronizer;
 import ch.uzh.ddis.thesis.lambda_architecture.data.Dataset;
 import ch.uzh.ddis.thesis.lambda_architecture.data.IDataEntry;
 import ch.uzh.ddis.thesis.lambda_architecture.data.IDataFactory;
@@ -26,6 +28,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * The coordination layer is responsible to feed the batch and speed layer with data.
+ * Please see the list below for a complete set of parameters.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class Coordinator {

@@ -1,0 +1,10 @@
+requests
+docopt
+Flask
+sh
+daemon
+matplotlib
+prettyplotlib
+statsmodels
+scipy
+numpy

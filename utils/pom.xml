@@ -10,65 +10,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>utils</artifactId>
+    <packaging>pom</packaging>
     <name>Utilities: Kafka Management, Distributed Debugging, etc.</name>
 
-    <dependencies>
-        <dependency>
-            <groupId>ch.uzh.ddis.thesis</groupId>
-            <artifactId>data</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
 
-        <!-- utilities -->
-        <dependency>
-            <groupId>com.beust</groupId>
-            <artifactId>jcommander</artifactId>
-            <version>1.30</version>
-        </dependency>
-    </dependencies>
-
-
-    <build>
-        <resources>
-            <resource>
-                <directory>${basedir}/src/main/resources/</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                            <mainClass>ch.uzh.ddis.thesis.lambda_architecture.utils.kafkaconsumer.KafkaTopicManager</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-            </plugin>
-
-            <!-- build tar.gz -->
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.3</version>
-                <configuration>
-                    <descriptors>
-                        <descriptor>assembly/src.xml</descriptor>
-                    </descriptors>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-
+    <modules>
+        <module>kafka_consumer_debugger</module>
+        <module>dataset_statistics</module>
+        <module>partitioner</module>
+    </modules>
 </project>

@@ -34,6 +34,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Storm task to solve the query `Get the average wind speed at the stations where the air temperature is >32 degrees
+ * in the last hour` on the SRBench data set.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class SRBenchQ4Bolt extends BaseRichBolt {

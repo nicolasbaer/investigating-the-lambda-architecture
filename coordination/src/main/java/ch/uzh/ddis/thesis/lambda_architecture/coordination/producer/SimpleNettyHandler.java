@@ -13,6 +13,13 @@ import org.apache.logging.log4j.MarkerManager;
 import java.util.UUID;
 
 /**
+ * The netty handler implements the communication protocol of the in-memory message queue.
+ * The protocol is pull based. Therefore a client requests a new batch of messages and the producer sends the batch.
+ * Note that there is no replay behavior in place. If a batch is dispatched, it is gone forever. If a client
+ * closes the connection at the same time a batch is send, the messages are lost.
+ *
+ * Please see the Netty documentation for a reference on the possible behavior of an inbound handler adapter.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
 public class SimpleNettyHandler extends ChannelInboundHandlerAdapter {

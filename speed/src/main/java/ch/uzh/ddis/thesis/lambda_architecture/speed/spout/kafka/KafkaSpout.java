@@ -1,4 +1,9 @@
 /**
+ * Please not that the Kafka package from Storm was copied here in order to modify it for the use case. It
+ * was not possible to deeply modify its behavior regarding reliable offset commits with its restrictive access
+ * policy. The code was copied from: https://github.com/apache/incubator-storm/tree/master/external/storm-kafka
+ *
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information

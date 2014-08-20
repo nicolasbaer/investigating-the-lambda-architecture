@@ -11,8 +11,11 @@ import org.apache.samza.task.*;
 
 
 /**
+ * This class is depricated as it was used to provide an alternative checkpoint solution for Samza.
+ *
  * @author Nicolas Baer <nicolas.baer@gmail.com>
  */
+@Deprecated
 public abstract class RecoverableSamzaTask implements StreamTask, InitableTask{
     private final static String STORE = "mystore";
     private final static Logger logger = LogManager.getLogger();

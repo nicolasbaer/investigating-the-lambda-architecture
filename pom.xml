@@ -22,15 +22,12 @@
     </developers>
 
     <modules>
-        <module>torque_deploy</module>
+        <module>automatic_deployment</module>
         <module>batch</module>
         <module>coordination</module>
         <module>data</module>
         <module>utils</module>
         <module>speed</module>
-        <module>partitioner</module>
-        <module>shutdown_handler</module>
-        <module>dataset_statistics</module>
     </modules>
 
     <properties>
